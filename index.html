@@ -2,8 +2,8 @@
 <html>
 <head>
     <title>MusCat</title>
-<p>=^•~•^=</p>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <p>=^•~•^=</p>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <style>
         body { 
             font-family: Arial, sans-serif;
@@ -11,6 +11,26 @@
             color: white;
             text-align: center;
             padding: 20px;
+            margin: 0;
+            overflow-x: hidden;
+            position: relative;
+        }
+        .container {
+            display: flex;
+            width: 200%;
+            transition: transform 0.3s ease;
+        }
+        .player-section, .lyrics-section {
+            width: 50%;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .lyrics-section {
+            background: #2a2a3a;
+            text-align: left;
+            padding: 20px;
+            overflow-y: auto;
+            height: 100vh;
         }
         .player {
             margin-top: 20px;
@@ -42,29 +62,72 @@
             color: #ff6b6b;
             margin-top: 10px;
         }
+        .lyrics-title {
+            color: #6a4cff;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .lyrics-text {
+            white-space: pre-line;
+            line-height: 1.6;
+        }
+        .swipe-hint {
+            color: #888;
+            margin-top: 20px;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
-    <h1>MusCat 🎵</h1>
-    
-    <div class="player">
-        <div id="nowPlaying">Выберите трек</div>
-        <div id="error" class="error"></div>
-        <audio id="audio" controls></audio>
-        
-        <button onclick="playTrack(1)">Black Sabbath - N.I.B.</button>
-        <button onclick="playTrack(2)">Chase Atlantic - Friends</button>
-        <button onclick="stopTrack()">⏹️ Стоп</button>
-</div>
-<p>Musical Cat - это программа для прослушивания музыки</p>
+    <div class="container" id="container">
+        <!-- Основной плеер -->
+        <div class="player-section">
+            <h1>MusCat 🎵</h1>
+            
+            <div class="player">
+                <div id="nowPlaying">Выберите трек</div>
+                <div id="error" class="error"></div>
+                <audio id="audio" controls></audio>
+                
+                <button onclick="playTrack(1)">Black Sabbath - N.I.B.</button>
+                <button onclick="playTrack(2)">Chase Atlantic - Friends</button>
+                <button onclick="stopTrack()">⏹️ Стоп</button>
+            </div>
+            <p>Musical Cat - это программа для прослушивания музыки</p>
+            <p class="swipe-hint">Свайпните влево для текста песни →</p>
+        </div>
 
+        <!-- Секция с текстом песни -->
+        <div class="lyrics-section">
+            <h2 class="lyrics-title" id="lyricsTitle">Текст песни</h2>
+            <div class="lyrics-text" id="lyricsText">
+                Выберите трек для отображения текста
+            </div>
+            <p class="swipe-hint">← Свайпните вправо для возврата</p>
+        </div>
+    </div>
 
     <script>
         const audio = document.getElementById('audio');
         const nowPlaying = document.getElementById('nowPlaying');
         const errorDisplay = document.getElementById('error');
+        const container = document.getElementById('container');
+        const lyricsTitle = document.getElementById('lyricsTitle');
+        const lyricsText = document.getElementById('lyricsText');
         
-        // Конфигурация (ЗАМЕНИТЕ yourusername и repo-name)
+        // Тексты песен
+        const lyricsData = {
+            'track1.mp3': {
+                title: 'Black Sabbath - N.I.B. Текст',
+                text: `[Куплет 1]\nSomewhere in time\nI was so alone\nNo one to be with...`
+            },
+            'track2.mp3': {
+                title: 'Chase Atlantic - Friends Текст',
+                text: `[Припев]\nWe're not friends anymore...`
+            }
+        };
+
+        // Конфигурация
         const config = {
             username: 'JustSink',
             repo: 'muscat_official',
@@ -79,26 +142,45 @@
                 }
             ]
         };
-        
-        // Проверка доступности треков
-        async function checkTracks() {
-            errorDisplay.textContent = '';
-            let allAvailable = true;
+
+        // Обработка свайпов
+        let startX = 0;
+        let currentX = 0;
+        let isDragging = false;
+
+        container.addEventListener('touchstart', (e) => {
+            startX = e.touches[0].clientX;
+            isDragging = true;
+        }, { passive: true });
+
+        container.addEventListener('touchmove', (e) => {
+            if (!isDragging) return;
+            currentX = e.touches[0].clientX;
+            const diff = startX - currentX;
             
-            for (const track of config.tracks) {
-                const url = buildUrl(track.file);
-                const exists = await checkFileExists(url);
-                
-                if (!exists) {
-                    errorDisplay.textContent += `Файл ${track.file} недоступен по адресу: ${url}\n`;
-                    allAvailable = false;
-                }
+            // Ограничиваем движение
+            if (diff > 0) {
+                container.style.transform = `translateX(-${Math.min(diff, 100)}px)`;
             }
+        }, { passive: true });
+
+        container.addEventListener('touchend', () => {
+            if (!isDragging) return;
+            isDragging = false;
             
-            return allAvailable;
-        }
-        
-        // Воспроизведение трека
+            const containerWidth = window.innerWidth;
+            const threshold = containerWidth / 4;
+            
+            if (currentX < startX - threshold) {
+                // Свайп влево - показываем текст
+                container.style.transform = 'translateX(-50%)';
+            } else {
+                // Возвращаем плеер
+                container.style.transform = 'translateX(0)';
+            }
+        }, { passive: true });
+
+        // Воспроизведение трека с обновлением текста
         async function playTrack(index) {
             const track = config.tracks[index - 1];
             const url = buildUrl(track.file);
@@ -115,6 +197,12 @@
                 audio.src = url;
                 await audio.play();
                 nowPlaying.textContent = `Сейчас: ${track.name}`;
+                
+                // Обновляем текст песни
+                if (lyricsData[track.file]) {
+                    lyricsTitle.textContent = lyricsData[track.file].title;
+                    lyricsText.textContent = lyricsData[track.file].text;
+                }
             } catch (err) {
                 nowPlaying.textContent = `Ошибка: ${track.name}`;
                 errorDisplay.textContent = err.message;
@@ -122,14 +210,13 @@
             }
         }
         
-        // Остановка
+        // Остальные функции (stopTrack, buildUrl, checkFileExists) остаются без изменений
         function stopTrack() {
             audio.pause();
             audio.currentTime = 0;
             nowPlaying.textContent = 'Выберите трек';
         }
         
-        // Вспомогательные функции
         function buildUrl(filename) {
             return `https://${config.username}.github.io/${config.repo}/tracks/${filename}`;
         }
@@ -148,6 +235,23 @@
             checkTracks();
             audio.volume = 0.8;
         });
+
+        async function checkTracks() {
+            errorDisplay.textContent = '';
+            let allAvailable = true;
+            
+            for (const track of config.tracks) {
+                const url = buildUrl(track.file);
+                const exists = await checkFileExists(url);
+                
+                if (!exists) {
+                    errorDisplay.textContent += `Файл ${track.file} недоступен по адресу: ${url}\n`;
+                    allAvailable = false;
+                }
+            }
+            
+            return allAvailable;
+        }
     </script>
 </body>
 </html>
