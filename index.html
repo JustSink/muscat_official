@@ -89,60 +89,56 @@
 
     <script>
         const audio = document.getElementById('audio');
-        const nowPlaying = document.getElementById('nowPlaying');
-        const volumeControl = document.getElementById('volume');
-        
-        // Список треков (точные имена ваших файлов)
-        const trackList = [
-            "Black_Sabbath_-_NIB_47874645.mp3",
-            "Surf Curse - Freaks [Official Audio].mp3",
-            "chase-atlantic-friends-mp3.mp3"
-        ];
-        
-        // Красивые названия для отображения
-        const trackNames = [
-            "Black Sabbath - NIB",
-            "Surf Curse - Freaks",
-            "Chase Atlantic - Friends"
-        ];
-        
-        // Воспроизведение трека
-        function playTrack(num) {
-            const trackIndex = num - 1;
-            const safeFilename = encodeURIComponent(trackList[trackIndex]);
-            audio.src = `https://JustSink.github.io/muscat-official/tracks/${safeFilename}`;
-            nowPlaying.textContent = `Сейчас играет: ${trackNames[trackIndex]}`;
-            audio.play().catch(e => console.error("Ошибка воспроизведения:", e));
-        }
-        
-        // Пауза
-        function pauseTrack() {
-            audio.pause();
-            nowPlaying.textContent += " (на паузе)";
-        }
-        
-        // Полная остановка
-        function stopTrack() {
-            audio.pause();
-            audio.currentTime = 0;
-            nowPlaying.textContent = "Выберите трек";
-        }
-        
-        // Регулировка громкости
-        function setVolume() {
-            audio.volume = volumeControl.value;
-        }
-        
-        // Автоматическая установка громкости при загрузке
-        window.onload = function() {
-            audio.volume = volumeControl.value;
-        };
-        
-        // Обработка ошибок
-        audio.addEventListener('error', function() {
-            nowPlaying.textContent = "Ошибка загрузки трека";
-            console.error("Ошибка аудио:", audio.error);
-        });
+const nowPlaying = document.getElementById('nowPlaying');
+const repoUrl = 'https://yourusername.github.io/repo-name'; // ← Замените!
+
+const tracks = [
+  {
+    file: "Black_Sabbath_-_NIB_47874645.mp3",
+    name: "Black Sabbath - NIB"
+  },
+  {
+    file: "Surf Curse - Freaks [Official Audio].mp3",
+    name: "Surf Curse - Freaks"
+  },
+  {
+    file: "chase-atlantic-friends-mp3.mp3",
+    name: "Chase Atlantic - Friends"
+  }
+];
+
+function playTrack(index) {
+  const track = tracks[index];
+  const encodedFile = encodeURIComponent(track.file);
+  audio.src = `${repoUrl}/tracks/${encodedFile}`;
+  
+  nowPlaying.textContent = `Загрузка: ${track.name}...`;
+  
+  audio.load();
+  audio.play()
+    .then(() => {
+      nowPlaying.textContent = `Сейчас: ${track.name}`;
+    })
+    .catch(err => {
+      nowPlaying.textContent = `Ошибка: ${track.name}`;
+      console.error("Ошибка воспроизведения:", err);
+      checkFileExists(audio.src);
+    });
+}
+
+function checkFileExists(url) {
+  fetch(url, { method: 'HEAD' })
+    .then(res => {
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      console.log("Файл существует:", url);
+    })
+    .catch(err => {
+      console.error("Файл недоступен:", url, err);
+      nowPlaying.textContent += " (файл не найден)";
+    });
+}
     </script>
 </body>
 </html>
