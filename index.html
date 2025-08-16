@@ -23,55 +23,50 @@
             flex-direction: column;
         }
         
-        .content {
+        .main-content {
             flex: 1;
             padding: 15px;
             overflow-y: auto;
         }
         
-        .library-section {
-            margin-bottom: 25px;
+        .empty-state {
+            text-align: center;
+            margin-top: 50%;
+            color: var(--text-secondary);
         }
         
-        .section-title {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
+        /* Стили для медиатеки */
+        .library-section {
+            padding: 10px;
         }
         
         .library-item {
-            padding: 12px 0;
-            border-bottom: 1px solid #282828;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: var(--card-bg);
         }
         
         .library-item-title {
             font-size: 18px;
-        }
-        
-        .favorites-section {
-            margin-top: 20px;
-        }
-        
-        .favorites-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        
-        .favorites-title {
-            font-size: 18px;
             font-weight: bold;
         }
         
-        .favorites-subtitle {
+        .library-item-subtitle {
             color: var(--text-secondary);
             font-size: 14px;
+            margin-top: 5px;
+        }
+        
+        .track-list {
+            margin-top: 15px;
         }
         
         .track-item {
             display: flex;
             align-items: center;
             padding: 12px 0;
+            border-bottom: 1px solid #282828;
         }
         
         .track-number {
@@ -84,7 +79,7 @@
         }
         
         .track-name {
-            font-size: 16px;
+            font-weight: bold;
         }
         
         .track-artist {
@@ -92,19 +87,37 @@
             font-size: 14px;
         }
         
+        /* Мини-плеер (как в Spotify) */
         .player-bar {
             position: fixed;
             bottom: 60px;
             left: 0;
             right: 0;
-            background: #282828;
+            background: linear-gradient(to right, #3a3a3a, #121212);
             padding: 10px 15px;
             display: flex;
             align-items: center;
+            z-index: 100;
         }
         
         .now-playing {
             flex-grow: 1;
+            min-width: 0;
+        }
+        
+        .now-playing-name {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .now-playing-artist {
+            color: var(--text-secondary);
+            font-size: 14px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .player-controls {
@@ -117,10 +130,11 @@
             border: none;
             color: white;
             font-size: 24px;
-            margin: 0 5px;
+            margin: 0 8px;
             cursor: pointer;
         }
         
+        /* Нижняя навигация */
         .nav-bar {
             position: fixed;
             bottom: 0;
@@ -131,6 +145,7 @@
             background: #181818;
             padding: 12px 0;
             border-top: 1px solid #282828;
+            z-index: 100;
         }
         
         .nav-btn {
@@ -141,6 +156,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            width: 33%;
         }
         
         .nav-btn.active {
@@ -152,8 +168,11 @@
             margin-bottom: 5px;
         }
         
+        /* Скрытие/показ контента */
         .tab-content {
             display: none;
+            height: calc(100vh - 130px);
+            overflow-y: auto;
         }
         
         .tab-content.active {
@@ -162,94 +181,67 @@
     </style>
 </head>
 <body>
-    <!-- Контент для Главной -->
+    <!-- Главный экран -->
     <div id="home-tab" class="tab-content active">
-        <div class="content">
-            <div style="text-align: center; margin-top: 20px;">
-                <p>Выберите трек в медиатеке</p>
+        <div class="main-content">
+            <div class="empty-state">
+                Выберите музыку в медиатеке
             </div>
         </div>
     </div>
     
-    <!-- Контент для Поиска -->
-    <div id="search-tab" class="tab-content">
-        <div class="content">
-            <p style="text-align: center; margin-top: 20px;">Функция поиска будет добавлена позже</p>
-        </div>
-    </div>
-    
-    <!-- Контент для Медиатеки -->
+    <!-- Экран медиатеки -->
     <div id="library-tab" class="tab-content">
-        <div class="content">
-            <h1 class="section-title">Моя медиатека</h1>
-            
+        <div class="main-content">
             <div class="library-section">
-                <div class="library-item">
-                    <div class="library-item-title">Плейлисты</div>
+                <div class="library-item" id="favorites-btn">
+                    <div class="library-item-title">Любимые треки</div>
+                    <div class="library-item-subtitle">2 трека</div>
                 </div>
                 
-                <div class="library-item">
-                    <div class="library-item-title">Альбомы</div>
-                </div>
-                
-                <div class="library-item">
-                    <div class="library-item-title">Исполнители</div>
-                </div>
-            </div>
-            
-            <div class="favorites-section">
-                <div class="favorites-header">
-                    <div class="favorites-title">Любимые треки</div>
-                    <div class="favorites-subtitle">Плейлист • 2 трека</div>
-                </div>
-                
-                <div class="track-item" data-track="0">
-                    <div class="track-number">1</div>
-                    <div class="track-info">
-                        <div class="track-name">N.I.B.</div>
-                        <div class="track-artist">Black Sabbath</div>
+                <div id="favorites-list" style="display: none;">
+                    <div class="track-list">
+                        <div class="track-item" data-track="0">
+                            <div class="track-number">1</div>
+                            <div class="track-info">
+                                <div class="track-name">N.I.B.</div>
+                                <div class="track-artist">Black Sabbath</div>
+                            </div>
+                        </div>
+                        
+                        <div class="track-item" data-track="1">
+                            <div class="track-number">2</div>
+                            <div class="track-info">
+                                <div class="track-name">Friends</div>
+                                <div class="track-artist">Chase Atlantic</div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="track-item" data-track="1">
-                    <div class="track-number">2</div>
-                    <div class="track-info">
-                        <div class="track-name">Friends</div>
-                        <div class="track-artist">Chase Atlantic</div>
-                    </div>
-                </div>
-                
-                <div class="library-item" style="margin-top: 20px;">
-                    <div class="library-item-title">Black Sabbath</div>
-                    <div class="favorites-subtitle">Исполнитель</div>
-                </div>
-                
-                <div class="library-item">
-                    <div class="library-item-title">Ozzy Osbourne</div>
-                    <div class="favorites-subtitle">Исполнитель</div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Мини-плеер -->
+    <!-- Мини-плеер (как в Spotify) -->
     <div class="player-bar">
         <div class="now-playing">
-            <div class="track-name" id="now-playing-name">Не выбрано</div>
-            <div class="track-artist" id="now-playing-artist">MusCat</div>
+            <div class="now-playing-name" id="now-playing-name">Не выбрано</div>
+            <div class="now-playing-artist" id="now-playing-artist">MusCat</div>
         </div>
         <div class="player-controls">
+            <button class="control-btn" id="prev-btn">⏮</button>
             <button class="control-btn" id="play-btn">▶</button>
+            <button class="control-btn" id="next-btn">⏭</button>
         </div>
     </div>
     
-    <!-- Нижняя навигация -->
+    <!-- Нижнее меню -->
     <div class="nav-bar">
         <button class="nav-btn active" data-tab="home-tab">
             <span class="nav-icon">🏠</span>
             <span>Главная</span>
         </button>
-        <button class="nav-btn" data-tab="search-tab">
+        <button class="nav-btn" data-tab="search-tab" disabled>
             <span class="nav-icon">🔍</span>
             <span>Поиск</span>
         </button>
@@ -281,8 +273,13 @@
         // Элементы плеера
         const audio = new Audio();
         const playBtn = document.getElementById('play-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
         const nowPlayingName = document.getElementById('now-playing-name');
         const nowPlayingArtist = document.getElementById('now-playing-artist');
+        const favoritesBtn = document.getElementById('favorites-btn');
+        const favoritesList = document.getElementById('favorites-list');
+        
         let isPlaying = false;
         let currentTrackIndex = 0;
 
@@ -300,6 +297,9 @@
                     playBtn.textContent = '⏸';
                     nowPlayingName.textContent = track.name;
                     nowPlayingArtist.textContent = track.artist;
+                    
+                    // Переключаем на вкладку Главная
+                    document.querySelector('.nav-btn[data-tab="home-tab"]').click();
                 })
                 .catch(err => {
                     console.error("Ошибка воспроизведения:", err);
@@ -307,7 +307,7 @@
                 });
         }
 
-        // Обработчики событий
+        // Обработчики событий плеера
         playBtn.addEventListener('click', function() {
             if (audio.src) {
                 if (isPlaying) {
@@ -324,20 +324,37 @@
             }
         });
 
+        prevBtn.addEventListener('click', () => {
+            playTrack((currentTrackIndex - 1 + config.tracks.length) % config.tracks.length);
+        });
+
+        nextBtn.addEventListener('click', () => {
+            playTrack((currentTrackIndex + 1) % config.tracks.length);
+        });
+
+        // Автопереход на следующий трек
+        audio.addEventListener('ended', () => {
+            nextBtn.click();
+        });
+
+        // Обработчик для кнопки "Любимые треки"
+        favoritesBtn.addEventListener('click', function() {
+            favoritesList.style.display = favoritesList.style.display === 'none' ? 'block' : 'none';
+        });
+
         // Обработчики для треков
         document.querySelectorAll('.track-item').forEach(item => {
             item.addEventListener('click', function() {
                 const trackIndex = parseInt(this.getAttribute('data-track'));
                 playTrack(trackIndex);
-                
-                // Переключаем на вкладку Главная
-                document.querySelector('.nav-btn[data-tab="home-tab"]').click();
             });
         });
 
         // Переключение вкладок
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', function() {
+                if (this.hasAttribute('disabled')) return;
+                
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 
@@ -347,11 +364,6 @@
                 });
                 document.getElementById(tabId).classList.add('active');
             });
-        });
-
-        // Автопереход на следуюший трек
-        audio.addEventListener('ended', function() {
-            playTrack((currentTrackIndex + 1) % config.tracks.length);
         });
     </script>
 </body>
