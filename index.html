@@ -10,43 +10,139 @@
             color: white;
             text-align: center;
             padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #6a4cff;
+            margin-bottom: 10px;
         }
         .player {
             margin-top: 20px;
             background: #2d2d44;
-            padding: 15px;
-            border-radius: 10px;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        #nowPlaying {
+            margin: 15px 0;
+            font-size: 18px;
+            min-height: 27px;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
         }
         button {
             background: #6a4cff;
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            margin: 5px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            flex: 1 0 120px;
+        }
+        button:hover {
+            background: #5a3ce8;
+        }
+        audio {
+            width: 100%;
+            margin-top: 10px;
+        }
+        .volume-control {
+            margin-top: 15px;
+            width: 100%;
+        }
+        input[type="range"] {
+            width: 80%;
+            height: 8px;
+            border-radius: 4px;
         }
     </style>
 </head>
 <body>
     <h1>MusCat 🎵</h1>
+    <p>Ваш музыкальный кот-плеер</p>
+    
     <div class="player">
+        <div id="nowPlaying">Выберите трек</div>
         <audio id="audio" controls></audio>
-        <div>
-            <button onclick="playTrack()">▶️ Воспроизвести</button>
+        
+        <div class="controls">
+            <button onclick="playTrack(1)">Black Sabbath</button>
+            <button onclick="playTrack(2)">Surf Curse</button>
+            <button onclick="playTrack(3)">Chase Atlantic</button>
             <button onclick="pauseTrack()">⏸️ Пауза</button>
+            <button onclick="stopTrack()">⏹️ Стоп</button>
+        </div>
+        
+        <div class="volume-control">
+            <p>Громкость:</p>
+            <input type="range" id="volume" min="0" max="1" step="0.1" value="0.7" onchange="setVolume()">
         </div>
     </div>
 
     <script>
         const audio = document.getElementById('audio');
-        audio.src = "https://example.com/track.mp3"; // Замените на реальную ссылку
+        const nowPlaying = document.getElementById('nowPlaying');
+        const volumeControl = document.getElementById('volume');
         
-        function playTrack() {
-            audio.play();
+        // Список треков (точные имена ваших файлов)
+        const trackList = [
+            "Black_Sabbath_-_NIB_47874645.mp3",
+            "Surf Curse - Freaks [Official Audio].mp3",
+            "chase-atlantic-friends-mp3.mp3"
+        ];
+        
+        // Красивые названия для отображения
+        const trackNames = [
+            "Black Sabbath - NIB",
+            "Surf Curse - Freaks",
+            "Chase Atlantic - Friends"
+        ];
+        
+        // Воспроизведение трека
+        function playTrack(num) {
+            const trackIndex = num - 1;
+            const safeFilename = encodeURIComponent(trackList[trackIndex]);
+            audio.src = `https://JustSink.github.io/muscat-official/tracks/${safeFilename}`;
+            nowPlaying.textContent = `Сейчас играет: ${trackNames[trackIndex]}`;
+            audio.play().catch(e => console.error("Ошибка воспроизведения:", e));
         }
+        
+        // Пауза
         function pauseTrack() {
             audio.pause();
+            nowPlaying.textContent += " (на паузе)";
         }
+        
+        // Полная остановка
+        function stopTrack() {
+            audio.pause();
+            audio.currentTime = 0;
+            nowPlaying.textContent = "Выберите трек";
+        }
+        
+        // Регулировка громкости
+        function setVolume() {
+            audio.volume = volumeControl.value;
+        }
+        
+        // Автоматическая установка громкости при загрузке
+        window.onload = function() {
+            audio.volume = volumeControl.value;
+        };
+        
+        // Обработка ошибок
+        audio.addEventListener('error', function() {
+            nowPlaying.textContent = "Ошибка загрузки трека";
+            console.error("Ошибка аудио:", audio.error);
+        });
     </script>
 </body>
 </html>
