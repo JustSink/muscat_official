@@ -23,6 +23,13 @@
             flex-direction: column;
         }
         
+        .header {
+            padding: 15px;
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+        }
+        
         .main-content {
             flex: 1;
             padding: 15px;
@@ -181,6 +188,9 @@
     </style>
 </head>
 <body>
+    <!-- Заголовок на главном экране -->
+    <div class="header" id="app-header">MusCat</div>
+    
     <!-- Главный экран -->
     <div id="home-tab" class="tab-content active">
         <div class="main-content">
@@ -279,6 +289,7 @@
         const nowPlayingArtist = document.getElementById('now-playing-artist');
         const favoritesBtn = document.getElementById('favorites-btn');
         const favoritesList = document.getElementById('favorites-list');
+        const appHeader = document.getElementById('app-header');
         
         let isPlaying = false;
         let currentTrackIndex = 0;
@@ -297,9 +308,6 @@
                     playBtn.textContent = '⏸';
                     nowPlayingName.textContent = track.name;
                     nowPlayingArtist.textContent = track.artist;
-                    
-                    // Переключаем на вкладку Главная
-                    document.querySelector('.nav-btn[data-tab="home-tab"]').click();
                 })
                 .catch(err => {
                     console.error("Ошибка воспроизведения:", err);
@@ -363,6 +371,10 @@
                     tab.classList.remove('active');
                 });
                 document.getElementById(tabId).classList.add('active');
+                
+                // Обновляем заголовок
+                appHeader.textContent = tabId === 'home-tab' ? 'MusCat' : 
+                                      tabId === 'library-tab' ? 'Медиатека' : 'MusCat';
             });
         });
     </script>
