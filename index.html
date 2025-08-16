@@ -3,7 +3,6 @@
 <head>
     <title>MusCat</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.github.io">
     <style>
         :root {
             --primary: #6a4cff;
@@ -14,7 +13,7 @@
         }
         
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             background: var(--dark-bg);
             color: var(--text-primary);
             margin: 0;
@@ -26,62 +25,37 @@
         
         .content {
             flex: 1;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
         }
         
-        .section-title {
-            font-size: 22px;
-            margin: 20px 0 15px 0;
-            display: flex;
-            align-items: center;
+        .library-section {
+            margin-bottom: 25px;
         }
         
-        .section-title .icon {
-            margin-right: 10px;
+        .section-title {
             font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
         }
         
         .library-item {
-            display: flex;
-            align-items: center;
             padding: 12px 0;
             border-bottom: 1px solid #282828;
         }
         
-        .library-item .icon {
-            font-size: 24px;
-            margin-right: 15px;
-            width: 24px;
-            text-align: center;
-        }
-        
-        .library-item-info {
-            flex-grow: 1;
-        }
-        
         .library-item-title {
-            font-weight: bold;
-        }
-        
-        .library-item-subtitle {
-            color: var(--text-secondary);
-            font-size: 14px;
-            margin-top: 3px;
+            font-size: 18px;
         }
         
         .favorites-section {
-            background: #282828;
-            border-radius: 8px;
-            padding: 15px;
-            margin: 20px 0;
+            margin-top: 20px;
         }
         
         .favorites-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         
         .favorites-title {
@@ -89,15 +63,15 @@
             font-weight: bold;
         }
         
+        .favorites-subtitle {
+            color: var(--text-secondary);
+            font-size: 14px;
+        }
+        
         .track-item {
             display: flex;
             align-items: center;
-            padding: 10px 0;
-            cursor: pointer;
-        }
-        
-        .track-item:hover {
-            background: #333;
+            padding: 12px 0;
         }
         
         .track-number {
@@ -110,7 +84,7 @@
         }
         
         .track-name {
-            font-weight: bold;
+            font-size: 16px;
         }
         
         .track-artist {
@@ -118,40 +92,23 @@
             font-size: 14px;
         }
         
-        .current-track {
-            text-align: center;
-            margin: 30px 0;
-            padding: 15px;
-            background: #282828;
-            border-radius: 8px;
-        }
-        
         .player-bar {
+            position: fixed;
+            bottom: 60px;
+            left: 0;
+            right: 0;
             background: #282828;
-            padding: 15px;
+            padding: 10px 15px;
             display: flex;
-            flex-direction: column;
+            align-items: center;
         }
         
-        .progress-container {
-            width: 100%;
-            height: 4px;
-            background: #535353;
-            margin-bottom: 15px;
-            border-radius: 2px;
-        }
-        
-        .progress-bar {
-            height: 100%;
-            width: 0%;
-            background: var(--primary);
-            border-radius: 2px;
-            transition: width 0.1s linear;
+        .now-playing {
+            flex-grow: 1;
         }
         
         .player-controls {
             display: flex;
-            justify-content: space-between;
             align-items: center;
         }
         
@@ -160,11 +117,15 @@
             border: none;
             color: white;
             font-size: 24px;
+            margin: 0 5px;
             cursor: pointer;
-            padding: 10px;
         }
         
         .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
             display: flex;
             justify-content: space-around;
             background: #181818;
@@ -180,7 +141,6 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
         }
         
         .nav-btn.active {
@@ -188,7 +148,8 @@
         }
         
         .nav-icon {
-            font-size: 20px;
+            font-size: 22px;
+            margin-bottom: 5px;
         }
         
         .tab-content {
@@ -201,42 +162,37 @@
     </style>
 </head>
 <body>
-    <div class="content">
-        <!-- Контент для Главной -->
-        <div id="home-tab" class="tab-content active">
-            <div class="current-track">
-                <div class="track-name">Выберите трек</div>
-                <div class="track-artist">из медиатеки</div>
+    <!-- Контент для Главной -->
+    <div id="home-tab" class="tab-content active">
+        <div class="content">
+            <div style="text-align: center; margin-top: 20px;">
+                <p>Выберите трек в медиатеке</p>
             </div>
         </div>
-        
-        <!-- Контент для Поиска -->
-        <div id="search-tab" class="tab-content">
-            <h2 class="section-title"><span class="icon">🔍</span>Поиск</h2>
-            <p>Функция поиска будет добавлена позже</p>
+    </div>
+    
+    <!-- Контент для Поиска -->
+    <div id="search-tab" class="tab-content">
+        <div class="content">
+            <p style="text-align: center; margin-top: 20px;">Функция поиска будет добавлена позже</p>
         </div>
-        
-        <!-- Контент для Медиатеки -->
-        <div id="library-tab" class="tab-content">
-            <h2 class="section-title"><span class="icon">📚</span>Моя медиатека</h2>
+    </div>
+    
+    <!-- Контент для Медиатеки -->
+    <div id="library-tab" class="tab-content">
+        <div class="content">
+            <h1 class="section-title">Моя медиатека</h1>
             
-            <div class="library-item">
-                <span class="icon">🎵</span>
-                <div class="library-item-info">
+            <div class="library-section">
+                <div class="library-item">
                     <div class="library-item-title">Плейлисты</div>
                 </div>
-            </div>
-            
-            <div class="library-item">
-                <span class="icon">💿</span>
-                <div class="library-item-info">
+                
+                <div class="library-item">
                     <div class="library-item-title">Альбомы</div>
                 </div>
-            </div>
-            
-            <div class="library-item">
-                <span class="icon">🎤</span>
-                <div class="library-item-info">
+                
+                <div class="library-item">
                     <div class="library-item-title">Исполнители</div>
                 </div>
             </div>
@@ -244,7 +200,7 @@
             <div class="favorites-section">
                 <div class="favorites-header">
                     <div class="favorites-title">Любимые треки</div>
-                    <div class="library-item-subtitle">Плейлист • 2 трека</div>
+                    <div class="favorites-subtitle">Плейлист • 2 трека</div>
                 </div>
                 
                 <div class="track-item" data-track="0">
@@ -262,38 +218,32 @@
                         <div class="track-artist">Chase Atlantic</div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="library-item">
-                <span class="icon">🎸</span>
-                <div class="library-item-info">
+                
+                <div class="library-item" style="margin-top: 20px;">
                     <div class="library-item-title">Black Sabbath</div>
-                    <div class="library-item-subtitle">Исполнитель</div>
+                    <div class="favorites-subtitle">Исполнитель</div>
                 </div>
-            </div>
-            
-            <div class="library-item">
-                <span class="icon">👨‍🎤</span>
-                <div class="library-item-info">
+                
+                <div class="library-item">
                     <div class="library-item-title">Ozzy Osbourne</div>
-                    <div class="library-item-subtitle">Исполнитель</div>
+                    <div class="favorites-subtitle">Исполнитель</div>
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- Мини-плеер -->
     <div class="player-bar">
-        <div class="progress-container">
-            <div class="progress-bar" id="progress-bar"></div>
+        <div class="now-playing">
+            <div class="track-name" id="now-playing-name">Не выбрано</div>
+            <div class="track-artist" id="now-playing-artist">MusCat</div>
         </div>
-        
         <div class="player-controls">
-            <button class="control-btn" id="prev-btn">⏮</button>
             <button class="control-btn" id="play-btn">▶</button>
-            <button class="control-btn" id="next-btn">⏭</button>
         </div>
     </div>
     
+    <!-- Нижняя навигация -->
     <div class="nav-bar">
         <button class="nav-btn active" data-tab="home-tab">
             <span class="nav-icon">🏠</span>
@@ -310,55 +260,46 @@
     </div>
 
     <script>
-        // Конфигурация (ЗАМЕНИТЕ на свои данные)
+        // Конфигурация (ЗАМЕНИТЕ НА СВОИ ДАННЫЕ)
         const config = {
-            username: 'JustSink', // Ваш логин GitHub
-            repo: 'muscat_official', // Название репозитория
+            username: 'JustSink',
+            repo: 'muscat_official',
             tracks: [
                 {
-                    file: 'track1.mp3', // Файл в папке tracks/
+                    file: 'track1.mp3',
                     name: 'N.I.B.',
                     artist: 'Black Sabbath'
                 },
                 {
-                    file: 'track2.mp3', // Файл в папке tracks/
+                    file: 'track2.mp3',
                     name: 'Friends',
                     artist: 'Chase Atlantic'
                 }
             ]
         };
 
-        // Элементы DOM
+        // Элементы плеера
         const audio = new Audio();
-        const progressBar = document.getElementById('progress-bar');
         const playBtn = document.getElementById('play-btn');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const currentTrackDisplay = document.querySelector('.current-track');
-        const trackItems = document.querySelectorAll('.track-item');
-
-        // Состояние плеера
-        let currentTrackIndex = 0;
+        const nowPlayingName = document.getElementById('now-playing-name');
+        const nowPlayingArtist = document.getElementById('now-playing-artist');
         let isPlaying = false;
+        let currentTrackIndex = 0;
 
-        // Функция для построения URL трека
-        function getTrackUrl(filename) {
-            return `https://${config.username}.github.io/${config.repo}/tracks/${filename}`;
-        }
-
-        // Воспроизведение трека
+        // Функция воспроизведения трека
         function playTrack(index) {
             if (index < 0 || index >= config.tracks.length) return;
             
             currentTrackIndex = index;
             const track = config.tracks[index];
-            audio.src = getTrackUrl(track.file);
+            audio.src = `https://${config.username}.github.io/${config.repo}/tracks/${track.file}`;
             
             audio.play()
                 .then(() => {
                     isPlaying = true;
                     playBtn.textContent = '⏸';
-                    updateTrackInfo(track);
+                    nowPlayingName.textContent = track.name;
+                    nowPlayingArtist.textContent = track.artist;
                 })
                 .catch(err => {
                     console.error("Ошибка воспроизведения:", err);
@@ -366,47 +307,25 @@
                 });
         }
 
-        // Обновление информации о треке
-        function updateTrackInfo(track) {
-            currentTrackDisplay.querySelector('.track-name').textContent = track.name;
-            currentTrackDisplay.querySelector('.track-artist').textContent = track.artist;
-        }
-
-        // Переключение треков
-        function prevTrack() {
-            playTrack((currentTrackIndex - 1 + config.tracks.length) % config.tracks.length);
-        }
-
-        function nextTrack() {
-            playTrack((currentTrackIndex + 1) % config.tracks.length);
-        }
-
-        // Обновление прогресса воспроизведения
-        function updateProgress() {
-            const progress = (audio.currentTime / audio.duration) * 100;
-            progressBar.style.width = `${progress}%`;
-        }
-
         // Обработчики событий
-        audio.addEventListener('timeupdate', updateProgress);
-        audio.addEventListener('ended', nextTrack);
-        
-        playBtn.addEventListener('click', () => {
-            if (isPlaying) {
-                audio.pause();
-                playBtn.textContent = '▶';
+        playBtn.addEventListener('click', function() {
+            if (audio.src) {
+                if (isPlaying) {
+                    audio.pause();
+                    this.textContent = '▶';
+                } else {
+                    audio.play();
+                    this.textContent = '⏸';
+                }
+                isPlaying = !isPlaying;
             } else {
-                audio.play();
-                playBtn.textContent = '⏸';
+                // Если трек еще не выбран, воспроизводим первый
+                playTrack(0);
             }
-            isPlaying = !isPlaying;
         });
 
-        prevBtn.addEventListener('click', prevTrack);
-        nextBtn.addEventListener('click', nextTrack);
-
-        // Обработчики для треков в медиатеке
-        trackItems.forEach(item => {
+        // Обработчики для треков
+        document.querySelectorAll('.track-item').forEach(item => {
             item.addEventListener('click', function() {
                 const trackIndex = parseInt(this.getAttribute('data-track'));
                 playTrack(trackIndex);
@@ -416,10 +335,7 @@
             });
         });
 
-        // Инициализация плеера
-        playTrack(0);
-
-        // Логика переключения вкладок
+        // Переключение вкладок
         document.querySelectorAll('.nav-btn').forEach(btn => {
             btn.addEventListener('click', function() {
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -431,6 +347,11 @@
                 });
                 document.getElementById(tabId).classList.add('active');
             });
+        });
+
+        // Автопереход на следуюший трек
+        audio.addEventListener('ended', function() {
+            playTrack((currentTrackIndex + 1) % config.tracks.length);
         });
     </script>
 </body>
