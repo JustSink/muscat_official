@@ -10,31 +10,17 @@
             color: white;
             text-align: center;
             padding: 20px;
-            max-width: 600px;
-            margin: 0 auto;
-        }
-        h1 {
-            color: #6a4cff;
-            margin-bottom: 10px;
         }
         .player {
             margin-top: 20px;
             background: #2d2d44;
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
         #nowPlaying {
             margin: 15px 0;
             font-size: 18px;
-            min-height: 27px;
-        }
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
+            min-height: 50px;
         }
         button {
             background: #6a4cff;
@@ -42,103 +28,123 @@
             border: none;
             padding: 12px 20px;
             border-radius: 8px;
-            cursor: pointer;
+            margin: 8px;
             font-size: 16px;
-            transition: background 0.3s;
-            flex: 1 0 120px;
-        }
-        button:hover {
-            background: #5a3ce8;
+            width: 80%;
+            max-width: 300px;
         }
         audio {
             width: 100%;
+            margin: 15px 0;
+        }
+        .error {
+            color: #ff6b6b;
             margin-top: 10px;
-        }
-        .volume-control {
-            margin-top: 15px;
-            width: 100%;
-        }
-        input[type="range"] {
-            width: 80%;
-            height: 8px;
-            border-radius: 4px;
         }
     </style>
 </head>
 <body>
     <h1>MusCat 🎵</h1>
-    <p>Ваш музыкальный кот-плеер</p>
     
     <div class="player">
         <div id="nowPlaying">Выберите трек</div>
+        <div id="error" class="error"></div>
         <audio id="audio" controls></audio>
         
-        <div class="controls">
-            <button onclick="playTrack(1)">Black Sabbath</button>
-            <button onclick="playTrack(2)">Surf Curse</button>
-            <button onclick="playTrack(3)">Chase Atlantic</button>
-            <button onclick="pauseTrack()">⏸️ Пауза</button>
-            <button onclick="stopTrack()">⏹️ Стоп</button>
-        </div>
-        
-        <div class="volume-control">
-            <p>Громкость:</p>
-            <input type="range" id="volume" min="0" max="1" step="0.1" value="0.7" onchange="setVolume()">
-        </div>
+        <button onclick="playTrack(1)">Black Sabbath - N.I.B.</button>
+        <button onclick="playTrack(2)">Chase Atlantic - Friends</button>
+        <button onclick="stopTrack()">⏹️ Стоп</button>
     </div>
 
     <script>
         const audio = document.getElementById('audio');
-const nowPlaying = document.getElementById('nowPlaying');
-const repoUrl = 'https://JustSink.github.io/muscat_official/tracks'
-
-const tracks = [
-  {
-    file: "Black_Sabbath_-_NIB_47874645.mp3",
-    name: "Black Sabbath - NIB"
-  },
-  {
-    file: "Surf Curse - Freaks [Official Audio].mp3",
-    name: "Surf Curse - Freaks"
-  },
-  {
-    file: "chase-atlantic-friends-mp3.mp3",
-    name: "Chase Atlantic - Friends"
-  }
-];
-
-function playTrack(index) {
-  const track = tracks[index];
-  const encodedFile = encodeURIComponent(track.file);
-  audio.src = `${repoUrl}/tracks/${encodedFile}`;
-  
-  nowPlaying.textContent = `Загрузка: ${track.name}...`;
-  
-  audio.load();
-  audio.play()
-    .then(() => {
-      nowPlaying.textContent = `Сейчас: ${track.name}`;
-    })
-    .catch(err => {
-      nowPlaying.textContent = `Ошибка: ${track.name}`;
-      console.error("Ошибка воспроизведения:", err);
-      checkFileExists(audio.src);
-    });
-}
-
-function checkFileExists(url) {
-  fetch(url, { method: 'HEAD' })
-    .then(res => {
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
-      }
-      console.log("Файл существует:", url);
-    })
-    .catch(err => {
-      console.error("Файл недоступен:", url, err);
-      nowPlaying.textContent += " (файл не найден)";
-    });
-}
+        const nowPlaying = document.getElementById('nowPlaying');
+        const errorDisplay = document.getElementById('error');
+        
+        // Конфигурация (ЗАМЕНИТЕ yourusername и repo-name)
+        const config = {
+            username: 'JustSink',
+            repo: 'muscat_official',
+            tracks: [
+                {
+                    file: 'track1.mp3',
+                    name: 'Black Sabbath - N.I.B.'
+                },
+                {
+                    file: 'track2.mp3',
+                    name: 'Chase Atlantic - Friends'
+                }
+            ]
+        };
+        
+        // Проверка доступности треков
+        async function checkTracks() {
+            errorDisplay.textContent = '';
+            let allAvailable = true;
+            
+            for (const track of config.tracks) {
+                const url = buildUrl(track.file);
+                const exists = await checkFileExists(url);
+                
+                if (!exists) {
+                    errorDisplay.textContent += `Файл ${track.file} недоступен по адресу: ${url}\n`;
+                    allAvailable = false;
+                }
+            }
+            
+            return allAvailable;
+        }
+        
+        // Воспроизведение трека
+        async function playTrack(index) {
+            const track = config.tracks[index - 1];
+            const url = buildUrl(track.file);
+            
+            nowPlaying.textContent = `Загрузка: ${track.name}...`;
+            errorDisplay.textContent = '';
+            
+            try {
+                const exists = await checkFileExists(url);
+                if (!exists) {
+                    throw new Error(`Файл ${track.file} не найден`);
+                }
+                
+                audio.src = url;
+                await audio.play();
+                nowPlaying.textContent = `Сейчас: ${track.name}`;
+            } catch (err) {
+                nowPlaying.textContent = `Ошибка: ${track.name}`;
+                errorDisplay.textContent = err.message;
+                console.error('Ошибка:', err);
+            }
+        }
+        
+        // Остановка
+        function stopTrack() {
+            audio.pause();
+            audio.currentTime = 0;
+            nowPlaying.textContent = 'Выберите трек';
+        }
+        
+        // Вспомогательные функции
+        function buildUrl(filename) {
+            return `https://${config.username}.github.io/${config.repo}/tracks/${filename}`;
+        }
+        
+        async function checkFileExists(url) {
+            try {
+                const response = await fetch(url, { method: 'HEAD' });
+                return response.ok;
+            } catch {
+                return false;
+            }
+        }
+        
+        // Проверить треки при загрузке
+        window.addEventListener('DOMContentLoaded', () => {
+            checkTracks();
+            audio.volume = 0.8;
+        });
     </script>
 </body>
 </html>
