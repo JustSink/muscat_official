@@ -202,7 +202,6 @@
             flex-direction: column;
             padding: 20px;
             overflow-y: auto;
-            touch-action: pan-y;
             transform: translateY(100%);
             opacity: 0;
             transition: transform 0.3s ease, opacity 0.3s ease;
@@ -246,25 +245,24 @@
             justify-content: center;
             font-size: 50px;
             color: #444;
-            transition: transform 0.3s ease;
+            transition: transform 0.4s ease, opacity 0.4s ease;
         }
         
         .full-player-info {
             text-align: center;
             margin-bottom: 30px;
+            transition: transform 0.4s ease, opacity 0.4s ease;
         }
         
         .full-player-title {
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 5px;
-            transition: transform 0.3s ease;
         }
         
         .full-player-artist {
             font-size: 16px;
             color: var(--text-secondary);
-            transition: transform 0.3s ease;
         }
         
         .full-player-progress {
@@ -576,6 +574,7 @@
         let currentDragY = 0;
         let lastSwipeTime = 0;
         let isAnimating = false;
+        let preventTgClose = false;
 
         // Функция форматирования времени
         function formatTime(seconds) {
@@ -602,6 +601,11 @@
             currentTrackIndex = index;
             const track = config.tracks[index];
             
+            // Сброс предыдущих анимаций
+            albumArt.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+            fullPlayerTitle.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+            fullPlayerArtist.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+            
             // Анимация перехода
             if (direction === 'left') {
                 albumArt.classList.add('slide-out-left');
@@ -627,11 +631,7 @@
                         fullPlayerArtist.textContent = track.artist;
                         lyricsPreview.textContent = track.lyrics || 'Предпросмотр текста';
                         
-                        // Сброс анимации
-                        albumArt.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
-                        fullPlayerTitle.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
-                        fullPlayerArtist.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
-                        
+                        // Новая анимация появления
                         if (direction === 'left') {
                             albumArt.classList.add('slide-in-right');
                             fullPlayerTitle.classList.add('slide-in-right');
@@ -685,7 +685,7 @@
 
         // Обработчики событий плеера
         playBtn.addEventListener('click', function(e) {
-            e.stopPropagation(); // Предотвращаем открытие полноэкранного плеера
+            e.stopPropagation();
             if (audio.src) {
                 if (isPlaying) {
                     audio.pause();
@@ -698,7 +698,6 @@
                 }
                 isPlaying = !isPlaying;
             } else {
-                // Если трек еще не выбран, воспроизводим первый
                 playTrack(0);
             }
         });
@@ -706,11 +705,6 @@
         // Автопереход на следующий трек
         audio.addEventListener('ended', () => {
             nextTrack();
-        });
-
-        // Обработчик для кнопки "Любимые треки"
-        favoritesBtn.addEventListener('click', function() {
-            favoritesList.style.display = favoritesList.style.display === 'none' ? 'block' : 'none';
         });
 
         // Обработчики для треков
@@ -726,7 +720,6 @@
             btn.addEventListener('click', function(e) {
                 if (this.hasAttribute('disabled')) return;
                 
-                // Предотвращаем всплытие события
                 e.stopPropagation();
                 
                 navBtns.forEach(b => b.classList.remove('active'));
@@ -738,7 +731,6 @@
                 });
                 document.getElementById(tabId).classList.add('active');
                 
-                // Обновляем заголовок
                 appHeader.textContent = tabId === 'home-tab' ? 'MusCat' : 
                                       tabId === 'library-tab' ? 'Медиатека' : 'MusCat';
             });
@@ -748,6 +740,7 @@
         miniPlayerContent.addEventListener('click', () => {
             fullPlayer.classList.add('active');
             document.querySelector('.nav-bar').style.display = 'none';
+            preventTgClose = true;
         });
 
         // Закрытие полноэкранного плеера
@@ -756,6 +749,9 @@
             fullPlayer.style.opacity = '';
             fullPlayer.classList.remove('active', 'dragging');
             document.querySelector('.nav-bar').style.display = 'flex';
+            setTimeout(() => {
+                preventTgClose = false;
+            }, 300);
         }
 
         closeFullPlayer.addEventListener('click', (e) => {
@@ -806,7 +802,7 @@
         }, false);
 
         miniPlayer.addEventListener('touchmove', function(e) {
-            e.preventDefault(); // Предотвращаем скролл страницы
+            e.preventDefault();
         }, { passive: false });
 
         miniPlayer.addEventListener('touchend', function(e) {
@@ -825,6 +821,7 @@
             if (touchStartY < 100) {
                 isDragging = true;
                 fullPlayer.classList.add('dragging');
+                preventTgClose = true;
             }
         }, false);
 
@@ -838,8 +835,9 @@
                 const progress = Math.min(dy / 200, 1);
                 fullPlayer.style.transform = `translateY(${progress * 100}%)`;
                 fullPlayer.style.opacity = 1 - progress;
+                e.preventDefault();
             }
-        }, false);
+        }, { passive: false });
 
         fullPlayer.addEventListener('touchend', function(e) {
             if (!isDragging) {
@@ -868,19 +866,16 @@
         // Функция обработки свайпов для миниплеера
         function handleMiniPlayerSwipe() {
             const now = Date.now();
-            if (now - lastSwipeTime < 500) return; // Защита от слишком частых свайпов
+            if (now - lastSwipeTime < 500) return;
             lastSwipeTime = now;
             
             const dx = touchEndX - touchStartX;
             const dy = touchEndY - touchStartY;
             
-            // Проверяем, что это горизонтальный свайп (а не вертикальный)
             if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
                 if (dx > 0) {
-                    // Свайп вправо - предыдущий трек
                     prevTrack();
                 } else {
-                    // Свайп влево - следующий трек
                     nextTrack();
                 }
             }
@@ -889,23 +884,27 @@
         // Функция обработки свайпов для полноэкранного плеера
         function handleFullPlayerSwipe() {
             const now = Date.now();
-            if (now - lastSwipeTime < 500 || isAnimating) return; // Защита от слишком частых свайпов
+            if (now - lastSwipeTime < 500 || isAnimating) return;
             lastSwipeTime = now;
             
             const dx = touchEndX - touchStartX;
             const dy = touchEndY - touchStartY;
             
-            // Проверяем, что это горизонтальный свайп (а не вертикальный)
             if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
                 if (dx > 0) {
-                    // Свайп вправо - предыдущий трек
                     prevTrack();
                 } else {
-                    // Свайп влево - следующий трек
                     nextTrack();
                 }
             }
         }
+
+        // Предотвращаем закрытие приложения в Telegram при свайпе вниз
+        document.addEventListener('touchmove', function(e) {
+            if (preventTgClose) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     </script>
 </body>
 </html>
