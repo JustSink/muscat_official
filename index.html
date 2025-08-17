@@ -54,6 +54,7 @@
             border-radius: 8px;
             margin-bottom: 10px;
             background: var(--card-bg);
+            cursor: pointer;
         }
         
         .library-item-title {
@@ -68,7 +69,13 @@
         }
         
         .track-list {
-            margin-top: 15px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        
+        .track-list.show {
+            max-height: 500px;
         }
         
         .track-item {
@@ -419,22 +426,20 @@
                     <div class="library-item-subtitle">2 трека</div>
                 </div>
                 
-                <div id="favorites-list" style="display: none;">
-                    <div class="track-list">
-                        <div class="track-item" data-track="0">
-                            <div class="track-number">1</div>
-                            <div class="track-info">
-                                <div class="track-name">N.I.B.</div>
-                                <div class="track-artist">Black Sabbath</div>
-                            </div>
+                <div class="track-list" id="favorites-list">
+                    <div class="track-item" data-track="0">
+                        <div class="track-number">1</div>
+                        <div class="track-info">
+                            <div class="track-name">N.I.B.</div>
+                            <div class="track-artist">Black Sabbath</div>
                         </div>
-                        
-                        <div class="track-item" data-track="1">
-                            <div class="track-number">2</div>
-                            <div class="track-info">
-                                <div class="track-name">Friends</div>
-                                <div class="track-artist">Chase Atlantic</div>
-                            </div>
+                    </div>
+                    
+                    <div class="track-item" data-track="1">
+                        <div class="track-number">2</div>
+                        <div class="track-info">
+                            <div class="track-name">Friends</div>
+                            <div class="track-artist">Chase Atlantic</div>
                         </div>
                     </div>
                 </div>
@@ -715,6 +720,12 @@
             });
         });
 
+        // Обработчик для кнопки "Любимые треки"
+        favoritesBtn.addEventListener('click', function(e) {
+            favoritesList.classList.toggle('show');
+            e.stopPropagation();
+        });
+
         // Переключение вкладок
         navBtns.forEach(btn => {
             btn.addEventListener('click', function(e) {
@@ -816,7 +827,7 @@
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
             startDragY = e.changedTouches[0].screenY;
-            isDragging = true; // Всегда активируем dragging при касании
+            isDragging = true;
             fullPlayer.classList.add('dragging');
             preventTgClose = true;
             e.preventDefault();
@@ -828,8 +839,7 @@
             currentDragY = e.changedTouches[0].screenY;
             const dy = currentDragY - startDragY;
             
-            // Минимальный порог 10px перед началом анимации
-            if (dy > 20) {
+            if (dy > 10) {
                 const progress = Math.min(dy / 200, 1);
                 fullPlayer.style.transform = `translateY(${progress * 100}%)`;
                 fullPlayer.style.opacity = 1 - progress;
@@ -839,7 +849,6 @@
 
         fullPlayer.addEventListener('touchend', function(e) {
             if (!isDragging) {
-                // Если это не drag для закрытия, проверяем горизонтальные свайпы
                 touchEndX = e.changedTouches[0].screenX;
                 touchEndY = e.changedTouches[0].screenY;
                 handleFullPlayerSwipe();
@@ -852,10 +861,8 @@
             const dy = currentDragY - startDragY;
             
             if (dy > 50) {
-                // Закрываем плеер, если свайпнули достаточно далеко
                 closeFullScreenPlayer();
             } else {
-                // Возвращаем на место
                 fullPlayer.style.transform = 'translateY(0)';
                 fullPlayer.style.opacity = 1;
             }
