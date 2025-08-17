@@ -195,7 +195,7 @@
             top: 0;
             left: 0;
             right: 0;
-            bottom: 70px;
+            bottom: 0;
             background: linear-gradient(to bottom, #3a3a3a, #121212);
             z-index: 200;
             display: flex;
@@ -223,6 +223,7 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
+            padding-top: 20px;
         }
         
         .full-player-close {
@@ -245,6 +246,7 @@
             justify-content: center;
             font-size: 50px;
             color: #444;
+            transition: transform 0.3s ease;
         }
         
         .full-player-info {
@@ -256,11 +258,13 @@
             font-size: 24px;
             font-weight: bold;
             margin-bottom: 5px;
+            transition: transform 0.3s ease;
         }
         
         .full-player-artist {
             font-size: 16px;
             color: var(--text-secondary);
+            transition: transform 0.3s ease;
         }
         
         .full-player-progress {
@@ -341,25 +345,57 @@
             border-top: 1px solid #282828;
         }
         
-        /* Анимация свайпа */
-        @keyframes swipe-right {
-            0% { transform: translateX(0); }
-            50% { transform: translateX(20px); }
-            100% { transform: translateX(0); }
+        /* Анимации */
+        .slide-out-left {
+            animation: slideOutLeft 0.4s forwards;
         }
         
-        @keyframes swipe-left {
-            0% { transform: translateX(0); }
-            50% { transform: translateX(-20px); }
-            100% { transform: translateX(0); }
+        .slide-out-right {
+            animation: slideOutRight 0.4s forwards;
         }
         
-        .swipe-right {
-            animation: swipe-right 0.3s ease;
+        .slide-in-left {
+            animation: slideInLeft 0.4s forwards;
         }
         
-        .swipe-left {
-            animation: swipe-left 0.3s ease;
+        .slide-in-right {
+            animation: slideInRight 0.4s forwards;
+        }
+        
+        @keyframes slideOutLeft {
+            to {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes slideOutRight {
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes slideInLeft {
+            from {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
     </style>
 </head>
@@ -514,6 +550,7 @@
         const closeFullPlayer = document.getElementById('close-full-player');
         const fullPlayerTitle = document.getElementById('full-player-title');
         const fullPlayerArtist = document.getElementById('full-player-artist');
+        const albumArt = document.getElementById('album-art');
         const fullPlayBtn = document.getElementById('full-play-btn');
         const fullPrevBtn = document.getElementById('full-prev-btn');
         const fullNextBtn = document.getElementById('full-next-btn');
@@ -528,7 +565,7 @@
         let isPlaying = false;
         let currentTrackIndex = 0;
         let isShuffled = false;
-        let repeatMode = 0; // 0 - нет, 1 - весь плейлист, 2 - один трек
+        let repeatMode = 0; // 0 - нет, 1 - один трек
         let updateProgressInterval;
         let touchStartX = 0;
         let touchStartY = 0;
@@ -538,6 +575,7 @@
         let startDragY = 0;
         let currentDragY = 0;
         let lastSwipeTime = 0;
+        let isAnimating = false;
 
         // Функция форматирования времени
         function formatTime(seconds) {
@@ -556,63 +594,81 @@
             }
         }
 
-        // Функция воспроизведения трека
-        function playTrack(index) {
-            if (index < 0 || index >= config.tracks.length) return;
+        // Функция воспроизведения трека с анимацией
+        function playTrack(index, direction = 'none') {
+            if (index < 0 || index >= config.tracks.length || isAnimating) return;
             
+            isAnimating = true;
             currentTrackIndex = index;
             const track = config.tracks[index];
-            audio.src = `https://${config.username}.github.io/${config.repo}/tracks/${track.file}`;
             
-            audio.play()
-                .then(() => {
-                    isPlaying = true;
-                    playBtn.textContent = '⏸';
-                    fullPlayBtn.innerHTML = '<i>⏸</i>';
-                    nowPlayingName.textContent = track.name;
-                    nowPlayingArtist.textContent = track.artist;
-                    fullPlayerTitle.textContent = track.name;
-                    fullPlayerArtist.textContent = track.artist;
-                    lyricsPreview.textContent = track.lyrics || 'Предпросмотр текста';
-                    
-                    // Обновляем прогресс
-                    clearInterval(updateProgressInterval);
-                    updateProgressInterval = setInterval(updateProgress, 1000);
-                })
-                .catch(err => {
-                    console.error("Ошибка воспроизведения:", err);
-                    alert(`Ошибка загрузки трека. Проверьте:\n1. Файл ${track.file} в папке tracks/\n2. Ссылку: ${audio.src}`);
-                });
+            // Анимация перехода
+            if (direction === 'left') {
+                albumArt.classList.add('slide-out-left');
+                fullPlayerTitle.classList.add('slide-out-left');
+                fullPlayerArtist.classList.add('slide-out-left');
+            } else if (direction === 'right') {
+                albumArt.classList.add('slide-out-right');
+                fullPlayerTitle.classList.add('slide-out-right');
+                fullPlayerArtist.classList.add('slide-out-right');
+            }
+            
+            setTimeout(() => {
+                audio.src = `https://${config.username}.github.io/${config.repo}/tracks/${track.file}`;
+                
+                audio.play()
+                    .then(() => {
+                        isPlaying = true;
+                        playBtn.textContent = '⏸';
+                        fullPlayBtn.innerHTML = '<i>⏸</i>';
+                        nowPlayingName.textContent = track.name;
+                        nowPlayingArtist.textContent = track.artist;
+                        fullPlayerTitle.textContent = track.name;
+                        fullPlayerArtist.textContent = track.artist;
+                        lyricsPreview.textContent = track.lyrics || 'Предпросмотр текста';
+                        
+                        // Сброс анимации
+                        albumArt.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+                        fullPlayerTitle.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+                        fullPlayerArtist.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+                        
+                        if (direction === 'left') {
+                            albumArt.classList.add('slide-in-right');
+                            fullPlayerTitle.classList.add('slide-in-right');
+                            fullPlayerArtist.classList.add('slide-in-right');
+                        } else if (direction === 'right') {
+                            albumArt.classList.add('slide-in-left');
+                            fullPlayerTitle.classList.add('slide-in-left');
+                            fullPlayerArtist.classList.add('slide-in-left');
+                        }
+                        
+                        // Обновляем прогресс
+                        clearInterval(updateProgressInterval);
+                        updateProgressInterval = setInterval(updateProgress, 1000);
+                        
+                        setTimeout(() => {
+                            isAnimating = false;
+                        }, 400);
+                    })
+                    .catch(err => {
+                        console.error("Ошибка воспроизведения:", err);
+                        alert(`Ошибка загрузки трека. Проверьте:\n1. Файл ${track.file} в папке tracks/\n2. Ссылку: ${audio.src}`);
+                        isAnimating = false;
+                    });
+            }, 100);
         }
 
         // Функция переключения трека с учетом режима повтора
         function nextTrack() {
-            if (repeatMode === 2) {
+            if (repeatMode === 1) {
                 // Режим повтора одного трека
                 audio.currentTime = 0;
                 audio.play();
                 return;
             }
             
-            let nextIndex;
-            if (isShuffled) {
-                nextIndex = Math.floor(Math.random() * config.tracks.length);
-                while (nextIndex === currentTrackIndex && config.tracks.length > 1) {
-                    nextIndex = Math.floor(Math.random() * config.tracks.length);
-                }
-            } else {
-                nextIndex = (currentTrackIndex + 1) % config.tracks.length;
-            }
-            
-            if (nextIndex === 0 && repeatMode === 0) {
-                // Конец плейлиста без повтора
-                audio.pause();
-                isPlaying = false;
-                playBtn.textContent = '▶';
-                fullPlayBtn.innerHTML = '<i>▶</i>';
-            } else {
-                playTrack(nextIndex);
-            }
+            let nextIndex = (currentTrackIndex + 1) % config.tracks.length;
+            playTrack(nextIndex, 'left');
         }
 
         // Функция переключения на предыдущий трек
@@ -622,7 +678,8 @@
                 audio.currentTime = 0;
             } else {
                 // Иначе переключаем на предыдущий трек
-                playTrack((currentTrackIndex - 1 + config.tracks.length) % config.tracks.length);
+                let prevIndex = (currentTrackIndex - 1 + config.tracks.length) % config.tracks.length;
+                playTrack(prevIndex, 'right');
             }
         }
 
@@ -690,6 +747,7 @@
         // Открытие полноэкранного плеера
         miniPlayerContent.addEventListener('click', () => {
             fullPlayer.classList.add('active');
+            document.querySelector('.nav-bar').style.display = 'none';
         });
 
         // Закрытие полноэкранного плеера
@@ -697,6 +755,7 @@
             fullPlayer.style.transform = '';
             fullPlayer.style.opacity = '';
             fullPlayer.classList.remove('active', 'dragging');
+            document.querySelector('.nav-bar').style.display = 'flex';
         }
 
         closeFullPlayer.addEventListener('click', (e) => {
@@ -733,19 +792,11 @@
             shuffleBtn.classList.toggle('active', isShuffled);
         });
 
-        // Режим повтора
+        // Режим повтора (только два состояния)
         repeatBtn.addEventListener('click', () => {
-            repeatMode = (repeatMode + 1) % 3;
-            repeatBtn.classList.remove('active');
-            if (repeatMode === 1) {
-                repeatBtn.classList.add('active');
-                repeatBtn.textContent = '🔁';
-            } else if (repeatMode === 2) {
-                repeatBtn.classList.add('active');
-                repeatBtn.textContent = '🔂';
-            } else {
-                repeatBtn.textContent = '🔁';
-            }
+            repeatMode = (repeatMode + 1) % 2;
+            repeatBtn.classList.toggle('active', repeatMode === 1);
+            repeatBtn.textContent = repeatMode === 1 ? '🔂' : '🔁';
         });
 
         // Обработчики свайпов для миниплеера
@@ -828,13 +879,9 @@
                 if (dx > 0) {
                     // Свайп вправо - предыдущий трек
                     prevTrack();
-                    miniPlayer.classList.add('swipe-left');
-                    setTimeout(() => miniPlayer.classList.remove('swipe-left'), 300);
                 } else {
                     // Свайп влево - следующий трек
                     nextTrack();
-                    miniPlayer.classList.add('swipe-right');
-                    setTimeout(() => miniPlayer.classList.remove('swipe-right'), 300);
                 }
             }
         }
@@ -842,7 +889,7 @@
         // Функция обработки свайпов для полноэкранного плеера
         function handleFullPlayerSwipe() {
             const now = Date.now();
-            if (now - lastSwipeTime < 500) return; // Защита от слишком частых свайпов
+            if (now - lastSwipeTime < 500 || isAnimating) return; // Защита от слишком частых свайпов
             lastSwipeTime = now;
             
             const dx = touchEndX - touchStartX;
