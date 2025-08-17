@@ -707,10 +707,7 @@
                 audio.play()
                     .then(() => {
                         isPlaying = true;
-                        playIcon.style.display = 'none';
-                        pauseIcon.style.display = 'flex';
-                        fullPlayIcon.style.display = 'none';
-                        fullPauseIcon.style.display = 'flex';
+                        updatePlayPauseIcons();
                         
                         nowPlayingName.textContent = track.name;
                         nowPlayingArtist.textContent = track.artist;
@@ -788,8 +785,24 @@
             }, 100);
         }
 
+        // Функция обновления иконок play/pause
+        function updatePlayPauseIcons() {
+            if (isPlaying) {
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'flex';
+                fullPlayIcon.style.display = 'none';
+                fullPauseIcon.style.display = 'flex';
+            } else {
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+                fullPlayIcon.style.display = 'block';
+                fullPauseIcon.style.display = 'none';
+            }
+        }
+
         // Функция переключения трека с учетом режима повтора
         function nextTrack() {
+            if (currentTrackIndex === -1) return;
             if (repeatMode === 1) {
                 // Режим повтора одного трека
                 audio.currentTime = 0;
@@ -811,6 +824,7 @@
 
         // Функция переключения на предыдущий трек
         function prevTrack() {
+            if (currentTrackIndex === -1) return;
             if (audio.currentTime > 3) {
                 // Если трек играет больше 3 секунд, перематываем в начало
                 audio.currentTime = 0;
@@ -829,7 +843,7 @@
             }
         }
 
-        // Обработчики событий плеера
+        // Переключение play/pause
         function togglePlayPause() {
             if (currentTrackIndex === -1) {
                 playTrack(0);
@@ -838,20 +852,14 @@
             
             if (isPlaying) {
                 audio.pause();
-                playIcon.style.display = 'block';
-                pauseIcon.style.display = 'none';
-                fullPlayIcon.style.display = 'block';
-                fullPauseIcon.style.display = 'none';
             } else {
                 audio.play();
-                playIcon.style.display = 'none';
-                pauseIcon.style.display = 'flex';
-                fullPlayIcon.style.display = 'none';
-                fullPauseIcon.style.display = 'flex';
             }
             isPlaying = !isPlaying;
+            updatePlayPauseIcons();
         }
 
+        // Обработчики событий плеера
         playBtn.addEventListener('click', function(e) {
             e.stopPropagation();
             togglePlayPause();
@@ -931,13 +939,11 @@
 
         fullPrevBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (currentTrackIndex === -1) return;
             prevTrack();
         });
 
         fullNextBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (currentTrackIndex === -1) return;
             nextTrack();
         });
 
