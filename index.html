@@ -21,6 +21,7 @@
             height: 100vh;
             display: flex;
             flex-direction: column;
+            touch-action: pan-y;
         }
         
         .header {
@@ -199,6 +200,7 @@
             flex-direction: column;
             padding: 20px;
             overflow-y: auto;
+            touch-action: pan-y;
         }
         
         .full-player.active {
@@ -327,6 +329,27 @@
             padding: 10px;
             border-top: 1px solid #282828;
         }
+        
+        /* Анимация свайпа */
+        @keyframes swipe-right {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(20px); }
+            100% { transform: translateX(0); }
+        }
+        
+        @keyframes swipe-left {
+            0% { transform: translateX(0); }
+            50% { transform: translateX(-20px); }
+            100% { transform: translateX(0); }
+        }
+        
+        .swipe-right {
+            animation: swipe-right 0.3s ease;
+        }
+        
+        .swipe-left {
+            animation: swipe-left 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -381,9 +404,7 @@
             <div class="now-playing-artist" id="now-playing-artist">MusCat</div>
         </div>
         <div class="player-controls">
-            <button class="control-btn" id="prev-btn">⏮</button>
             <button class="control-btn" id="play-btn">▶</button>
-            <button class="control-btn" id="next-btn">⏭</button>
         </div>
     </div>
     
@@ -416,11 +437,9 @@
             <button class="full-player-btn" id="shuffle-btn">🔀</button>
             
             <div class="full-player-main-controls">
-                <button class="full-player-btn" id="full-prev-btn">⏮</button>
                 <button class="full-player-play-btn" id="full-play-btn">
                     <i>▶</i>
                 </button>
-                <button class="full-player-btn" id="full-next-btn">⏭</button>
             </div>
             
             <button class="full-player-btn" id="repeat-btn">🔁</button>
@@ -471,8 +490,6 @@
         // Элементы плеера
         const audio = new Audio();
         const playBtn = document.getElementById('play-btn');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
         const nowPlayingName = document.getElementById('now-playing-name');
         const nowPlayingArtist = document.getElementById('now-playing-artist');
         const favoritesBtn = document.getElementById('favorites-btn');
@@ -484,8 +501,6 @@
         const fullPlayerTitle = document.getElementById('full-player-title');
         const fullPlayerArtist = document.getElementById('full-player-artist');
         const fullPlayBtn = document.getElementById('full-play-btn');
-        const fullPrevBtn = document.getElementById('full-prev-btn');
-        const fullNextBtn = document.getElementById('full-next-btn');
         const progressCurrent = document.getElementById('progress-current');
         const currentTime = document.getElementById('current-time');
         const totalTime = document.getElementById('total-time');
@@ -498,6 +513,10 @@
         let isShuffled = false;
         let repeatMode = 0; // 0 - нет, 1 - весь плейлист, 2 - один трек
         let updateProgressInterval;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
 
         // Функция форматирования времени
         function formatTime(seconds) {
@@ -575,6 +594,17 @@
             }
         }
 
+        // Функция переключения на предыдущий трек
+        function prevTrack() {
+            if (audio.currentTime > 3) {
+                // Если трек играет больше 3 секунд, перематываем в начало
+                audio.currentTime = 0;
+            } else {
+                // Иначе переключаем на предыдущий трек
+                playTrack((currentTrackIndex - 1 + config.tracks.length) % config.tracks.length);
+            }
+        }
+
         // Обработчики событий плеера
         playBtn.addEventListener('click', function() {
             if (audio.src) {
@@ -592,20 +622,6 @@
                 // Если трек еще не выбран, воспроизводим первый
                 playTrack(0);
             }
-        });
-
-        prevBtn.addEventListener('click', () => {
-            if (audio.currentTime > 3) {
-                // Если трек играет больше 3 секунд, перематываем в начало
-                audio.currentTime = 0;
-            } else {
-                // Иначе переключаем на предыдущий трек
-                playTrack((currentTrackIndex - 1 + config.tracks.length) % config.tracks.length);
-            }
-        });
-
-        nextBtn.addEventListener('click', () => {
-            nextTrack();
         });
 
         // Автопереход на следующий трек
@@ -661,14 +677,6 @@
             playBtn.click();
         });
 
-        fullPrevBtn.addEventListener('click', () => {
-            prevBtn.click();
-        });
-
-        fullNextBtn.addEventListener('click', () => {
-            nextBtn.click();
-        });
-
         // Перемотка по клику на прогресс-бар
         document.querySelector('.progress-bar').addEventListener('click', (e) => {
             if (audio.duration) {
@@ -699,6 +707,57 @@
                 repeatBtn.textContent = '🔁';
             }
         });
+
+        // Обработчики свайпов для миниплеера
+        miniPlayer.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, false);
+
+        miniPlayer.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }, false);
+
+        // Обработчики свайпов для полноэкранного плеера
+        fullPlayer.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, false);
+
+        fullPlayer.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleSwipe();
+        }, false);
+
+        // Функция обработки свайпов
+        function handleSwipe() {
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            // Проверяем, что это горизонтальный свайп (а не вертикальный)
+            if (Math.abs(dx) > Math.abs(dy)) {
+                // Определяем минимальную длину свайпа
+                if (Math.abs(dx) > 50) {
+                    if (dx > 0) {
+                        // Свайп вправо - предыдущий трек
+                        prevTrack();
+                        miniPlayer.classList.add('swipe-left');
+                        setTimeout(() => miniPlayer.classList.remove('swipe-left'), 300);
+                    } else {
+                        // Свайп влево - следующий трек
+                        nextTrack();
+                        miniPlayer.classList.add('swipe-right');
+                        setTimeout(() => miniPlayer.classList.remove('swipe-right'), 300);
+                    }
+                }
+            } else if (dy > 100 && fullPlayer.classList.contains('active')) {
+                // Вертикальный свайп вниз (только для полноэкранного плеера)
+                fullPlayer.classList.remove('active');
+            }
+        }
     </script>
 </body>
 </html>
