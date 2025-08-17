@@ -185,6 +185,148 @@
         .tab-content.active {
             display: block;
         }
+        
+        /* Полноэкранный плеер */
+        .full-player {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 70px;
+            background: linear-gradient(to bottom, #3a3a3a, #121212);
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .full-player.active {
+            display: flex;
+        }
+        
+        .full-player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .full-player-close {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .full-player-artwork {
+            width: 80%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            margin: 0 auto 30px;
+            background: #282828;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 50px;
+            color: #444;
+        }
+        
+        .full-player-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .full-player-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .full-player-artist {
+            font-size: 16px;
+            color: var(--text-secondary);
+        }
+        
+        .full-player-progress {
+            margin-bottom: 30px;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: #444;
+            border-radius: 2px;
+            margin-bottom: 5px;
+            position: relative;
+        }
+        
+        .progress-current {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 2px;
+            width: 0%;
+        }
+        
+        .progress-time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+        
+        .full-player-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .full-player-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .full-player-btn.active {
+            color: var(--primary);
+        }
+        
+        .full-player-main-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+        }
+        
+        .full-player-play-btn {
+            background: white;
+            border: none;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        
+        .full-player-play-btn i {
+            color: black;
+            font-size: 28px;
+        }
+        
+        .lyrics-preview {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #282828;
+        }
     </style>
 </head>
 <body>
@@ -233,7 +375,7 @@
     </div>
     
     <!-- Мини-плеер (как в Spotify) -->
-    <div class="player-bar">
+    <div class="player-bar" id="mini-player">
         <div class="now-playing">
             <div class="now-playing-name" id="now-playing-name">Не выбрано</div>
             <div class="now-playing-artist" id="now-playing-artist">MusCat</div>
@@ -242,6 +384,50 @@
             <button class="control-btn" id="prev-btn">⏮</button>
             <button class="control-btn" id="play-btn">▶</button>
             <button class="control-btn" id="next-btn">⏭</button>
+        </div>
+    </div>
+    
+    <!-- Полноэкранный плеер -->
+    <div class="full-player" id="full-player">
+        <div class="full-player-header">
+            <button class="full-player-close" id="close-full-player">↓</button>
+        </div>
+        
+        <div class="full-player-artwork" id="album-art">
+            🎵
+        </div>
+        
+        <div class="full-player-info">
+            <div class="full-player-title" id="full-player-title">Не выбрано</div>
+            <div class="full-player-artist" id="full-player-artist">MusCat</div>
+        </div>
+        
+        <div class="full-player-progress">
+            <div class="progress-bar">
+                <div class="progress-current" id="progress-current"></div>
+            </div>
+            <div class="progress-time">
+                <span id="current-time">0:00</span>
+                <span id="total-time">0:00</span>
+            </div>
+        </div>
+        
+        <div class="full-player-controls">
+            <button class="full-player-btn" id="shuffle-btn">🔀</button>
+            
+            <div class="full-player-main-controls">
+                <button class="full-player-btn" id="full-prev-btn">⏮</button>
+                <button class="full-player-play-btn" id="full-play-btn">
+                    <i>▶</i>
+                </button>
+                <button class="full-player-btn" id="full-next-btn">⏭</button>
+            </div>
+            
+            <button class="full-player-btn" id="repeat-btn">🔁</button>
+        </div>
+        
+        <div class="lyrics-preview" id="lyrics-preview">
+            Предпросмотр текста
         </div>
     </div>
     
@@ -270,12 +456,14 @@
                 {
                     file: 'track1.mp3',
                     name: 'N.I.B.',
-                    artist: 'Black Sabbath'
+                    artist: 'Black Sabbath',
+                    lyrics: 'Times have changed and times are strange\nHere I come, but I ain\'t the same'
                 },
                 {
                     file: 'track2.mp3',
                     name: 'Friends',
-                    artist: 'Chase Atlantic'
+                    artist: 'Chase Atlantic',
+                    lyrics: 'I don\'t really wanna be your friend\nI just wanna be your lover'
                 }
             ]
         };
@@ -290,9 +478,43 @@
         const favoritesBtn = document.getElementById('favorites-btn');
         const favoritesList = document.getElementById('favorites-list');
         const appHeader = document.getElementById('app-header');
+        const miniPlayer = document.getElementById('mini-player');
+        const fullPlayer = document.getElementById('full-player');
+        const closeFullPlayer = document.getElementById('close-full-player');
+        const fullPlayerTitle = document.getElementById('full-player-title');
+        const fullPlayerArtist = document.getElementById('full-player-artist');
+        const fullPlayBtn = document.getElementById('full-play-btn');
+        const fullPrevBtn = document.getElementById('full-prev-btn');
+        const fullNextBtn = document.getElementById('full-next-btn');
+        const progressCurrent = document.getElementById('progress-current');
+        const currentTime = document.getElementById('current-time');
+        const totalTime = document.getElementById('total-time');
+        const lyricsPreview = document.getElementById('lyrics-preview');
+        const shuffleBtn = document.getElementById('shuffle-btn');
+        const repeatBtn = document.getElementById('repeat-btn');
         
         let isPlaying = false;
         let currentTrackIndex = 0;
+        let isShuffled = false;
+        let repeatMode = 0; // 0 - нет, 1 - весь плейлист, 2 - один трек
+        let updateProgressInterval;
+
+        // Функция форматирования времени
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Функция обновления прогресса
+        function updateProgress() {
+            if (audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressCurrent.style.width = `${percent}%`;
+                currentTime.textContent = formatTime(audio.currentTime);
+                totalTime.textContent = formatTime(audio.duration);
+            }
+        }
 
         // Функция воспроизведения трека
         function playTrack(index) {
@@ -306,13 +528,51 @@
                 .then(() => {
                     isPlaying = true;
                     playBtn.textContent = '⏸';
+                    fullPlayBtn.innerHTML = '<i>⏸</i>';
                     nowPlayingName.textContent = track.name;
                     nowPlayingArtist.textContent = track.artist;
+                    fullPlayerTitle.textContent = track.name;
+                    fullPlayerArtist.textContent = track.artist;
+                    lyricsPreview.textContent = track.lyrics || 'Предпросмотр текста';
+                    
+                    // Обновляем прогресс
+                    clearInterval(updateProgressInterval);
+                    updateProgressInterval = setInterval(updateProgress, 1000);
                 })
                 .catch(err => {
                     console.error("Ошибка воспроизведения:", err);
                     alert(`Ошибка загрузки трека. Проверьте:\n1. Файл ${track.file} в папке tracks/\n2. Ссылку: ${audio.src}`);
                 });
+        }
+
+        // Функция переключения трека с учетом режима повтора
+        function nextTrack() {
+            if (repeatMode === 2) {
+                // Режим повтора одного трека
+                audio.currentTime = 0;
+                audio.play();
+                return;
+            }
+            
+            let nextIndex;
+            if (isShuffled) {
+                nextIndex = Math.floor(Math.random() * config.tracks.length);
+                while (nextIndex === currentTrackIndex && config.tracks.length > 1) {
+                    nextIndex = Math.floor(Math.random() * config.tracks.length);
+                }
+            } else {
+                nextIndex = (currentTrackIndex + 1) % config.tracks.length;
+            }
+            
+            if (nextIndex === 0 && repeatMode === 0) {
+                // Конец плейлиста без повтора
+                audio.pause();
+                isPlaying = false;
+                playBtn.textContent = '▶';
+                fullPlayBtn.innerHTML = '<i>▶</i>';
+            } else {
+                playTrack(nextIndex);
+            }
         }
 
         // Обработчики событий плеера
@@ -321,9 +581,11 @@
                 if (isPlaying) {
                     audio.pause();
                     this.textContent = '▶';
+                    fullPlayBtn.innerHTML = '<i>▶</i>';
                 } else {
                     audio.play();
                     this.textContent = '⏸';
+                    fullPlayBtn.innerHTML = '<i>⏸</i>';
                 }
                 isPlaying = !isPlaying;
             } else {
@@ -333,16 +595,22 @@
         });
 
         prevBtn.addEventListener('click', () => {
-            playTrack((currentTrackIndex - 1 + config.tracks.length) % config.tracks.length);
+            if (audio.currentTime > 3) {
+                // Если трек играет больше 3 секунд, перематываем в начало
+                audio.currentTime = 0;
+            } else {
+                // Иначе переключаем на предыдущий трек
+                playTrack((currentTrackIndex - 1 + config.tracks.length) % config.tracks.length);
+            }
         });
 
         nextBtn.addEventListener('click', () => {
-            playTrack((currentTrackIndex + 1) % config.tracks.length);
+            nextTrack();
         });
 
         // Автопереход на следующий трек
         audio.addEventListener('ended', () => {
-            nextBtn.click();
+            nextTrack();
         });
 
         // Обработчик для кнопки "Любимые треки"
@@ -376,6 +644,60 @@
                 appHeader.textContent = tabId === 'home-tab' ? 'MusCat' : 
                                       tabId === 'library-tab' ? 'Медиатека' : 'MusCat';
             });
+        });
+
+        // Открытие/закрытие полноэкранного плеера
+        miniPlayer.addEventListener('click', () => {
+            fullPlayer.classList.add('active');
+        });
+
+        closeFullPlayer.addEventListener('click', (e) => {
+            e.stopPropagation();
+            fullPlayer.classList.remove('active');
+        });
+
+        // Обработчики для полноэкранного плеера
+        fullPlayBtn.addEventListener('click', () => {
+            playBtn.click();
+        });
+
+        fullPrevBtn.addEventListener('click', () => {
+            prevBtn.click();
+        });
+
+        fullNextBtn.addEventListener('click', () => {
+            nextBtn.click();
+        });
+
+        // Перемотка по клику на прогресс-бар
+        document.querySelector('.progress-bar').addEventListener('click', (e) => {
+            if (audio.duration) {
+                const rect = e.target.getBoundingClientRect();
+                const pos = (e.clientX - rect.left) / rect.width;
+                audio.currentTime = pos * audio.duration;
+                updateProgress();
+            }
+        });
+
+        // Режим перемешивания
+        shuffleBtn.addEventListener('click', () => {
+            isShuffled = !isShuffled;
+            shuffleBtn.classList.toggle('active', isShuffled);
+        });
+
+        // Режим повтора
+        repeatBtn.addEventListener('click', () => {
+            repeatMode = (repeatMode + 1) % 3;
+            repeatBtn.classList.remove('active');
+            if (repeatMode === 1) {
+                repeatBtn.classList.add('active');
+                repeatBtn.textContent = '🔁';
+            } else if (repeatMode === 2) {
+                repeatBtn.classList.add('active');
+                repeatBtn.textContent = '🔂';
+            } else {
+                repeatBtn.textContent = '🔁';
+            }
         });
     </script>
 </body>
