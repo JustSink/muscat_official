@@ -312,7 +312,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 20px;
+            gap: 30px;
         }
         
         .full-player-play-btn {
@@ -410,7 +410,7 @@
     
     <!-- Мини-плеер (как в Spotify) -->
     <div class="player-bar" id="mini-player">
-        <div class="now-playing">
+        <div class="now-playing" id="mini-player-content">
             <div class="now-playing-name" id="now-playing-name">Не выбрано</div>
             <div class="now-playing-artist" id="now-playing-artist">MusCat</div>
         </div>
@@ -448,9 +448,11 @@
             <button class="full-player-btn" id="shuffle-btn">🔀</button>
             
             <div class="full-player-main-controls">
+                <button class="full-player-btn" id="full-prev-btn">⏮</button>
                 <button class="full-player-play-btn" id="full-play-btn">
                     <i>▶</i>
                 </button>
+                <button class="full-player-btn" id="full-next-btn">⏭</button>
             </div>
             
             <button class="full-player-btn" id="repeat-btn">🔁</button>
@@ -507,17 +509,21 @@
         const favoritesList = document.getElementById('favorites-list');
         const appHeader = document.getElementById('app-header');
         const miniPlayer = document.getElementById('mini-player');
+        const miniPlayerContent = document.getElementById('mini-player-content');
         const fullPlayer = document.getElementById('full-player');
         const closeFullPlayer = document.getElementById('close-full-player');
         const fullPlayerTitle = document.getElementById('full-player-title');
         const fullPlayerArtist = document.getElementById('full-player-artist');
         const fullPlayBtn = document.getElementById('full-play-btn');
+        const fullPrevBtn = document.getElementById('full-prev-btn');
+        const fullNextBtn = document.getElementById('full-next-btn');
         const progressCurrent = document.getElementById('progress-current');
         const currentTime = document.getElementById('current-time');
         const totalTime = document.getElementById('total-time');
         const lyricsPreview = document.getElementById('lyrics-preview');
         const shuffleBtn = document.getElementById('shuffle-btn');
         const repeatBtn = document.getElementById('repeat-btn');
+        const navBtns = document.querySelectorAll('.nav-btn');
         
         let isPlaying = false;
         let currentTrackIndex = 0;
@@ -531,6 +537,7 @@
         let isDragging = false;
         let startDragY = 0;
         let currentDragY = 0;
+        let lastSwipeTime = 0;
 
         // Функция форматирования времени
         function formatTime(seconds) {
@@ -658,11 +665,14 @@
         });
 
         // Переключение вкладок
-        document.querySelectorAll('.nav-btn').forEach(btn => {
-            btn.addEventListener('click', function() {
+        navBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
                 if (this.hasAttribute('disabled')) return;
                 
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                // Предотвращаем всплытие события
+                e.stopPropagation();
+                
+                navBtns.forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
                 
                 const tabId = this.getAttribute('data-tab');
@@ -677,25 +687,34 @@
             });
         });
 
-        // Открытие/закрытие полноэкранного плеера
-        miniPlayer.addEventListener('click', (e) => {
-            if (e.target !== playBtn) {
-                fullPlayer.classList.add('active');
-            }
+        // Открытие полноэкранного плеера
+        miniPlayerContent.addEventListener('click', () => {
+            fullPlayer.classList.add('active');
         });
+
+        // Закрытие полноэкранного плеера
+        function closeFullScreenPlayer() {
+            fullPlayer.style.transform = '';
+            fullPlayer.style.opacity = '';
+            fullPlayer.classList.remove('active', 'dragging');
+        }
 
         closeFullPlayer.addEventListener('click', (e) => {
             e.stopPropagation();
             closeFullScreenPlayer();
         });
 
-        function closeFullScreenPlayer() {
-            fullPlayer.classList.remove('active');
-        }
-
         // Обработчики для полноэкранного плеера
         fullPlayBtn.addEventListener('click', () => {
             playBtn.click();
+        });
+
+        fullPrevBtn.addEventListener('click', () => {
+            prevTrack();
+        });
+
+        fullNextBtn.addEventListener('click', () => {
+            nextTrack();
         });
 
         // Перемотка по клику на прогресс-бар
@@ -750,8 +769,12 @@
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
             startDragY = e.changedTouches[0].screenY;
-            isDragging = true;
-            fullPlayer.classList.add('dragging');
+            
+            // Проверяем, где началось касание (если в верхней части - это drag для закрытия)
+            if (touchStartY < 100) {
+                isDragging = true;
+                fullPlayer.classList.add('dragging');
+            }
         }, false);
 
         fullPlayer.addEventListener('touchmove', function(e) {
@@ -768,14 +791,20 @@
         }, false);
 
         fullPlayer.addEventListener('touchend', function(e) {
-            if (!isDragging) return;
+            if (!isDragging) {
+                // Если это не drag для закрытия, проверяем горизонтальные свайпы
+                touchEndX = e.changedTouches[0].screenX;
+                touchEndY = e.changedTouches[0].screenY;
+                handleFullPlayerSwipe();
+                return;
+            }
             
             isDragging = false;
             fullPlayer.classList.remove('dragging');
             
             const dy = currentDragY - startDragY;
             
-            if (dy > 100) {
+            if (dy > 50) {
                 // Закрываем плеер, если свайпнули достаточно далеко
                 closeFullScreenPlayer();
             } else {
@@ -787,6 +816,10 @@
 
         // Функция обработки свайпов для миниплеера
         function handleMiniPlayerSwipe() {
+            const now = Date.now();
+            if (now - lastSwipeTime < 500) return; // Защита от слишком частых свайпов
+            lastSwipeTime = now;
+            
             const dx = touchEndX - touchStartX;
             const dy = touchEndY - touchStartY;
             
@@ -806,12 +839,11 @@
             }
         }
 
-        // Обработка свайпов в полноэкранном плеере
-        fullPlayer.addEventListener('touchend', function(e) {
-            touchEndX = e.changedTouches[0].screenX;
-            touchEndY = e.changedTouches[0].screenY;
-            
-            if (isDragging) return; // Пропускаем, если это drag для закрытия
+        // Функция обработки свайпов для полноэкранного плеера
+        function handleFullPlayerSwipe() {
+            const now = Date.now();
+            if (now - lastSwipeTime < 500) return; // Защита от слишком частых свайпов
+            lastSwipeTime = now;
             
             const dx = touchEndX - touchStartX;
             const dy = touchEndY - touchStartY;
@@ -826,7 +858,7 @@
                     nextTrack();
                 }
             }
-        }, false);
+        }
     </script>
 </body>
 </html>
