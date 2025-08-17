@@ -633,6 +633,7 @@
         const repeatBtn = document.getElementById('repeat-btn');
         const navBtns = document.querySelectorAll('.nav-btn');
         const trackItems = document.querySelectorAll('.track-item');
+        const progressBar = document.querySelector('.progress-bar');
         
         let isPlaying = false;
         let currentTrackIndex = -1;
@@ -865,6 +866,11 @@
             togglePlayPause();
         });
 
+        fullPlayBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            togglePlayPause();
+        });
+
         // Автопереход на следующий трек
         audio.addEventListener('ended', () => {
             nextTrackTimeout = setTimeout(() => {
@@ -948,7 +954,7 @@
         });
 
         // Перемотка по клику на прогресс-бар
-        document.querySelector('.progress-bar').addEventListener('click', (e) => {
+        progressBar.addEventListener('click', (e) => {
             if (audio.duration) {
                 const rect = e.target.getBoundingClientRect();
                 const pos = (e.clientX - rect.left) / rect.width;
