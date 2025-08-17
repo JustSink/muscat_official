@@ -816,14 +816,11 @@
             touchStartX = e.changedTouches[0].screenX;
             touchStartY = e.changedTouches[0].screenY;
             startDragY = e.changedTouches[0].screenY;
-            
-            // Проверяем, где началось касание (если в верхней части - это drag для закрытия)
-            if (touchStartY < 100) {
-                isDragging = true;
-                fullPlayer.classList.add('dragging');
-                preventTgClose = true;
-            }
-        }, false);
+            isDragging = true; // Всегда активируем dragging при касании
+            fullPlayer.classList.add('dragging');
+            preventTgClose = true;
+            e.preventDefault();
+        }, { passive: false });
 
         fullPlayer.addEventListener('touchmove', function(e) {
             if (!isDragging) return;
@@ -831,7 +828,8 @@
             currentDragY = e.changedTouches[0].screenY;
             const dy = currentDragY - startDragY;
             
-            if (dy > 0) {
+            // Минимальный порог 10px перед началом анимации
+            if (dy > 20) {
                 const progress = Math.min(dy / 200, 1);
                 fullPlayer.style.transform = `translateY(${progress * 100}%)`;
                 fullPlayer.style.opacity = 1 - progress;
@@ -901,7 +899,7 @@
 
         // Предотвращаем закрытие приложения в Telegram при свайпе вниз
         document.addEventListener('touchmove', function(e) {
-            if (preventTgClose) {
+            if (preventTgClose && isDragging) {
                 e.preventDefault();
             }
         }, { passive: false });
