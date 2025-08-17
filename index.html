@@ -932,20 +932,77 @@
         });
 
         // Обработчики для полноэкранного плеера
-        fullPlayBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            togglePlayPause();
-        });
+fullPlayBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (currentTrackIndex === -1) {
+        playTrack(0);
+        return;
+    }
+    
+    if (isPlaying) {
+        audio.pause();
+        fullPlayIcon.style.display = 'block';
+        fullPauseIcon.style.display = 'none';
+    } else {
+        audio.play();
+        fullPlayIcon.style.display = 'none';
+        fullPauseIcon.style.display = 'flex';
+    }
+    isPlaying = !isPlaying;
+});
 
-        fullPrevBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            prevTrack();
-        });
+fullPrevBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (currentTrackIndex === -1) return;
+    
+    if (audio.currentTime > 3) {
+        audio.currentTime = 0;
+    } else {
+        let prevIndex;
+        if (isShuffled) {
+            do {
+                prevIndex = Math.floor(Math.random() * config.tracks.length);
+            } while (prevIndex === currentTrackIndex && config.tracks.length > 1);
+        } else {
+            prevIndex = (currentTrackIndex - 1 + config.tracks.length) % config.tracks.length;
+        }
+        playTrack(prevIndex, 'right');
+    }
+});
 
-        fullNextBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            nextTrack();
-        });
+fullNextBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    if (currentTrackIndex === -1) return;
+    
+    if (repeatMode === 1) {
+        audio.currentTime = 0;
+        audio.play();
+        return;
+    }
+    
+    let nextIndex;
+    if (isShuffled) {
+        do {
+            nextIndex = Math.floor(Math.random() * config.tracks.length);
+        } while (nextIndex === currentTrackIndex && config.tracks.length > 1);
+    } else {
+        nextIndex = (currentTrackIndex + 1) % config.tracks.length;
+    }
+    playTrack(nextIndex, 'left');
+});
+
+shuffleBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    isShuffled = !isShuffled;
+    shuffleBtn.classList.toggle('active', isShuffled);
+});
+
+repeatBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    repeatMode = (repeatMode + 1) % 2;
+    repeatBtn.classList.toggle('active', repeatMode === 1);
+    repeatBtn.textContent = repeatMode === 1 ? '🔂' : '🔁';
+});
 
         // Перемотка по клику на прогресс-бар
         document.querySelector('.progress-bar').addEventListener('click', (e) => {
