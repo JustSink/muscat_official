@@ -583,27 +583,315 @@
     </div>
 
     <script>
+        // Конфигурация (ЗАМЕНИТЕ НА СВОИ ДАННЫЕ)
         const config = {
             username: 'JustSink',
             repo: 'muscat_official',
-            track:[
+            tracks: [
                 {
-                    file:'track1.mp3',
-                    name:'N.I.B.',
-                    artist:'Black Sabbath',
+                    file: 'track1.mp3',
+                    name: 'N.I.B.',
+                    artist: 'Black Sabbath',
+                    lyrics: 'Times have changed and times are strange\nHere I come, but I ain\'t the same'
                 },
                 {
-                    file:'track2.mp3',
-                    name:'Friends',
-                    artist:'chase Aatlantic'.
-                        }
-                ]
+                    file: 'track2.mp3',
+                    name: 'Friends',
+                    artist: 'Chase Atlantic',
+                    lyrics: 'I don\'t really wanna be your friend\nI just wanna be your lover'
+                }
+            ]
         };
-        // Базовый функционал переключения вкладок
+
+        // Элементы плеера
+        const audio = new Audio();
+        const playBtn = document.getElementById('play-btn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        const fullPlayBtn = document.getElementById('full-play-btn');
+        const fullPlayIcon = document.getElementById('full-play-icon');
+        const fullPauseIcon = document.getElementById('full-pause-icon');
+        const nowPlayingName = document.getElementById('now-playing-name');
+        const nowPlayingArtist = document.getElementById('now-playing-artist');
+        let miniPlayerContent = document.getElementById('mini-player-content');
+        const favoritesBtn = document.getElementById('favorites-btn');
+        const favoritesList = document.getElementById('favorites-list');
+        const appHeader = document.getElementById('app-header');
+        const miniPlayer = document.getElementById('mini-player');
+        const fullPlayer = document.getElementById('full-player');
+        const closeFullPlayer = document.getElementById('close-full-player');
+        const fullPlayerTitle = document.getElementById('full-player-title');
+        const fullPlayerArtist = document.getElementById('full-player-artist');
+        const albumArt = document.getElementById('album-art');
+        const fullPrevBtn = document.getElementById('full-prev-btn');
+        const fullNextBtn = document.getElementById('full-next-btn');
+        const progressCurrent = document.getElementById('progress-current');
+        const currentTime = document.getElementById('current-time');
+        const totalTime = document.getElementById('total-time');
+        const lyricsPreview = document.getElementById('lyrics-preview');
+        const shuffleBtn = document.getElementById('shuffle-btn');
+        const repeatBtn = document.getElementById('repeat-btn');
         const navBtns = document.querySelectorAll('.nav-btn');
+        const trackItems = document.querySelectorAll('.track-item');
+        
+        let isPlaying = false;
+        let currentTrackIndex = -1;
+        let isShuffled = false;
+        let repeatMode = 0; // 0 - нет, 1 - один трек
+        let updateProgressInterval;
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+        let isDragging = false;
+        let startDragY = 0;
+        let currentDragY = 0;
+        let lastSwipeTime = 0;
+        let isAnimating = false;
+        let preventTgClose = false;
+        let nextTrackTimeout;
+
+        // Функция форматирования времени
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        // Функция обновления прогресса
+        function updateProgress() {
+            if (audio.duration) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressCurrent.style.width = `${percent}%`;
+                currentTime.textContent = formatTime(audio.currentTime);
+                totalTime.textContent = formatTime(audio.duration);
+            }
+        }
+
+        // Функция воспроизведения трека с анимацией
+        function playTrack(index, direction = 'none') {
+            if (index < 0 || index >= config.tracks.length || isAnimating) return;
+            
+            clearTimeout(nextTrackTimeout);
+            isAnimating = true;
+            currentTrackIndex = index;
+            const track = config.tracks[index];
+            
+            // Сброс предыдущих анимаций
+            albumArt.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+            fullPlayerTitle.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+            fullPlayerArtist.classList.remove('slide-out-left', 'slide-out-right', 'slide-in-left', 'slide-in-right');
+            
+            // Анимация перехода
+            if (direction === 'left') {
+                albumArt.classList.add('slide-out-left');
+                fullPlayerTitle.classList.add('slide-out-left');
+                fullPlayerArtist.classList.add('slide-out-left');
+                
+                // Анимация для мини-плеера
+                miniPlayerContent.style.transform = 'translateX(-100%)';
+                miniPlayerContent.style.opacity = '0';
+            } else if (direction === 'right') {
+                albumArt.classList.add('slide-out-right');
+                fullPlayerTitle.classList.add('slide-out-right');
+                fullPlayerArtist.classList.add('slide-out-right');
+                
+                // Анимация для мини-плеера
+                miniPlayerContent.style.transform = 'translateX(100%)';
+                miniPlayerContent.style.opacity = '0';
+            }
+            
+            setTimeout(() => {
+                audio.src = `https://${config.username}.github.io/${config.repo}/tracks/${track.file}`;
+                
+                audio.play()
+                    .then(() => {
+                        isPlaying = true;
+                        updatePlayPauseIcons();
+                        
+                        nowPlayingName.textContent = track.name;
+                        nowPlayingArtist.textContent = track.artist;
+                        fullPlayerTitle.textContent = track.name;
+                        fullPlayerArtist.textContent = track.artist;
+                        lyricsPreview.textContent = track.lyrics || 'Предпросмотр текста';
+                        
+                        // Новая анимация появления
+                        if (direction === 'left') {
+                            albumArt.classList.add('slide-in-right');
+                            fullPlayerTitle.classList.add('slide-in-right');
+                            fullPlayerArtist.classList.add('slide-in-right');
+                            
+                            // Создаем новый элемент для анимации
+                            const newContent = document.createElement('div');
+                            newContent.className = 'now-playing-content';
+                            newContent.innerHTML = `
+                                <div class="now-playing-name">${track.name}</div>
+                                <div class="now-playing-artist">${track.artist}</div>
+                            `;
+                            newContent.style.transform = 'translateX(100%)';
+                            newContent.style.opacity = '0';
+                            document.querySelector('.now-playing').appendChild(newContent);
+                            
+                            setTimeout(() => {
+                                newContent.style.transform = 'translateX(0)';
+                                newContent.style.opacity = '1';
+                                setTimeout(() => {
+                                    miniPlayerContent.remove();
+                                    miniPlayerContent = newContent;
+                                    isAnimating = false;
+                                }, 300);
+                            }, 10);
+                        } else if (direction === 'right') {
+                            albumArt.classList.add('slide-in-left');
+                            fullPlayerTitle.classList.add('slide-in-left');
+                            fullPlayerArtist.classList.add('slide-in-left');
+                            
+                            // Создаем новый элемент для анимации
+                            const newContent = document.createElement('div');
+                            newContent.className = 'now-playing-content';
+                            newContent.innerHTML = `
+                                <div class="now-playing-name">${track.name}</div>
+                                <div class="now-playing-artist">${track.artist}</div>
+                            `;
+                            newContent.style.transform = 'translateX(-100%)';
+                            newContent.style.opacity = '0';
+                            document.querySelector('.now-playing').appendChild(newContent);
+                            
+                            setTimeout(() => {
+                                newContent.style.transform = 'translateX(0)';
+                                newContent.style.opacity = '1';
+                                setTimeout(() => {
+                                    miniPlayerContent.remove();
+                                    miniPlayerContent = newContent;
+                                    isAnimating = false;
+                                }, 300);
+                            }, 10);
+                        } else {
+                            // Без анимации
+                            miniPlayerContent.style.transform = 'translateX(0)';
+                            miniPlayerContent.style.opacity = '1';
+                            isAnimating = false;
+                        }
+                        
+                        // Обновляем прогресс
+                        clearInterval(updateProgressInterval);
+                        updateProgressInterval = setInterval(updateProgress, 1000);
+                    })
+                    .catch(err => {
+                        console.error("Ошибка воспроизведения:", err);
+                        alert(`Ошибка загрузки трека. Проверьте:\n1. Файл ${track.file} в папке tracks/\n2. Ссылку: ${audio.src}`);
+                        isAnimating = false;
+                    });
+            }, 100);
+        }
+
+        // Функция обновления иконок play/pause
+        function updatePlayPauseIcons() {
+            if (isPlaying) {
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'flex';
+                fullPlayIcon.style.display = 'none';
+                fullPauseIcon.style.display = 'flex';
+            } else {
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+                fullPlayIcon.style.display = 'block';
+                fullPauseIcon.style.display = 'none';
+            }
+        }
+
+        // Функция переключения трека с учетом режима повтора
+        function nextTrack() {
+            if (currentTrackIndex === -1) return;
+            if (repeatMode === 1) {
+                // Режим повтора одного трека
+                audio.currentTime = 0;
+                audio.play();
+                return;
+            }
+            
+            let nextIndex;
+            if (isShuffled) {
+                nextIndex = Math.floor(Math.random() * config.tracks.length);
+                while (nextIndex === currentTrackIndex && config.tracks.length > 1) {
+                    nextIndex = Math.floor(Math.random() * config.tracks.length);
+                }
+            } else {
+                nextIndex = (currentTrackIndex + 1) % config.tracks.length;
+            }
+            playTrack(nextIndex, 'left');
+        }
+
+        // Функция переключения на предыдущий трек
+        function prevTrack() {
+            if (currentTrackIndex === -1) return;
+            if (audio.currentTime > 3) {
+                // Если трек играет больше 3 секунд, перематываем в начало
+                audio.currentTime = 0;
+            } else {
+                // Иначе переключаем на предыдущий трек
+                let prevIndex;
+                if (isShuffled) {
+                    prevIndex = Math.floor(Math.random() * config.tracks.length);
+                    while (prevIndex === currentTrackIndex && config.tracks.length > 1) {
+                        prevIndex = Math.floor(Math.random() * config.tracks.length);
+                    }
+                } else {
+                    prevIndex = (currentTrackIndex - 1 + config.tracks.length) % config.tracks.length;
+                }
+                playTrack(prevIndex, 'right');
+            }
+        }
+
+        // Переключение play/pause
+        function togglePlayPause() {
+            if (currentTrackIndex === -1) {
+                playTrack(0);
+                return;
+            }
+            
+            if (isPlaying) {
+                audio.pause();
+            } else {
+                audio.play();
+            }
+            isPlaying = !isPlaying;
+            updatePlayPauseIcons();
+        }
+
+        // Обработчики событий плеера
+        playBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            togglePlayPause();
+        });
+
+        // Автопереход на следующий трек
+        audio.addEventListener('ended', () => {
+            nextTrackTimeout = setTimeout(() => {
+                nextTrack();
+            }, 1000);
+        });
+
+        // Обработчики для треков
+        trackItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const trackIndex = parseInt(this.getAttribute('data-track'));
+                playTrack(trackIndex);
+            });
+        });
+
+        // Обработчик для кнопки "Любимые треки"
+        favoritesBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            favoritesList.classList.toggle('show');
+        });
+
+        // Переключение вкладок
         navBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
+            btn.addEventListener('click', function(e) {
                 if (this.hasAttribute('disabled')) return;
+                
+                e.stopPropagation();
                 
                 navBtns.forEach(b => b.classList.remove('active'));
                 this.classList.add('active');
@@ -614,27 +902,189 @@
                 });
                 document.getElementById(tabId).classList.add('active');
                 
-                document.getElementById('app-header').textContent = 
-                    tabId === 'home-tab' ? 'MusCat' : 
-                    tabId === 'library-tab' ? 'Медиатека' : 'MusCat';
+                appHeader.textContent = tabId === 'home-tab' ? 'MusCat' : 
+                                      tabId === 'library-tab' ? 'Медиатека' : 'MusCat';
             });
         });
 
-        // Базовый функционал открытия/закрытия списка треков
-        document.getElementById('favorites-btn').addEventListener('click', function() {
-            document.getElementById('favorites-list').classList.toggle('show');
-        });
-
-        // Базовый функционал открытия/закрытия полноэкранного плеера
-        document.getElementById('mini-player').addEventListener('click', function() {
-            document.getElementById('full-player').classList.add('active');
+        // Открытие полноэкранного плеера
+        miniPlayer.addEventListener('click', (e) => {
+            if (currentTrackIndex === -1) return;
+            fullPlayer.classList.add('active');
             document.querySelector('.nav-bar').style.display = 'none';
+            preventTgClose = true;
         });
 
-        document.getElementById('close-full-player').addEventListener('click', function() {
-            document.getElementById('full-player').classList.remove('active');
+        // Закрытие полноэкранного плеера
+        function closeFullScreenPlayer() {
+            fullPlayer.style.transform = '';
+            fullPlayer.style.opacity = '';
+            fullPlayer.classList.remove('active', 'dragging');
             document.querySelector('.nav-bar').style.display = 'flex';
+            setTimeout(() => {
+                preventTgClose = false;
+            }, 300);
+        }
+
+        closeFullPlayer.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeFullScreenPlayer();
         });
+
+        // Обработчики для полноэкранного плеера
+        fullPlayBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePlayPause();
+        });
+
+        fullPrevBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            prevTrack();
+        });
+
+        fullNextBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            nextTrack();
+        });
+
+        // Перемотка по клику на прогресс-бар
+        document.querySelector('.progress-bar').addEventListener('click', (e) => {
+            if (audio.duration) {
+                const rect = e.target.getBoundingClientRect();
+                const pos = (e.clientX - rect.left) / rect.width;
+                audio.currentTime = pos * audio.duration;
+                updateProgress();
+            }
+        });
+
+        // Режим перемешивания
+        shuffleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            isShuffled = !isShuffled;
+            shuffleBtn.classList.toggle('active', isShuffled);
+        });
+
+        // Режим повтора (только два состояния)
+        repeatBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            repeatMode = (repeatMode + 1) % 2;
+            repeatBtn.classList.toggle('active', repeatMode === 1);
+            repeatBtn.textContent = repeatMode === 1 ? '🔂' : '🔁';
+        });
+
+        // Обработчики свайпов для миниплеера
+        miniPlayer.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+        }, false);
+
+        miniPlayer.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+        }, { passive: false });
+
+        miniPlayer.addEventListener('touchend', function(e) {
+            touchEndX = e.changedTouches[0].screenX;
+            touchEndY = e.changedTouches[0].screenY;
+            handleMiniPlayerSwipe();
+        }, false);
+
+        // Обработчики свайпов для полноэкранного плеера
+        fullPlayer.addEventListener('touchstart', function(e) {
+            touchStartX = e.changedTouches[0].screenX;
+            touchStartY = e.changedTouches[0].screenY;
+            startDragY = e.changedTouches[0].screenY;
+            isDragging = true;
+            fullPlayer.classList.add('dragging');
+            preventTgClose = true;
+            e.preventDefault();
+        }, { passive: false });
+
+        fullPlayer.addEventListener('touchmove', function(e) {
+            if (!isDragging) return;
+            
+            currentDragY = e.changedTouches[0].screenY;
+            const dy = currentDragY - startDragY;
+            
+            // Минимальный порог 10px перед началом анимации
+            if (dy > 10) {
+                const progress = Math.min(dy / 300, 1); // Увеличили делитель для более плавного движения
+                fullPlayer.style.transform = `translateY(${progress * 100}%)`;
+                fullPlayer.style.opacity = 1 - (progress * 0.8); // Меньше изменения прозрачности
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        fullPlayer.addEventListener('touchend', function(e) {
+            if (!isDragging) {
+                // Если это не drag для закрытия, проверяем горизонтальные свайпы
+                touchEndX = e.changedTouches[0].screenX;
+                touchEndY = e.changedTouches[0].screenY;
+                handleFullPlayerSwipe();
+                return;
+            }
+            
+            isDragging = false;
+            fullPlayer.classList.remove('dragging');
+            
+            const dy = currentDragY - startDragY;
+            
+            if (dy > 100) { // Увеличили порог для закрытия
+                // Закрываем плеер, если свайпнули достаточно далеко
+                closeFullScreenPlayer();
+            } else {
+                // Возвращаем на место с анимацией
+                fullPlayer.style.transition = 'transform 0.3s cubic-bezier(0.28, 0.11, 0.32, 1), opacity 0.3s ease';
+                fullPlayer.style.transform = 'translateY(0)';
+                fullPlayer.style.opacity = 1;
+                
+                setTimeout(() => {
+                    fullPlayer.style.transition = 'transform 0.5s cubic-bezier(0.28, 0.11, 0.32, 1), opacity 0.5s ease';
+                }, 300);
+            }
+        }, false);
+
+        // Функция обработки свайпов для миниплеера
+        function handleMiniPlayerSwipe() {
+            const now = Date.now();
+            if (now - lastSwipeTime < 500 || currentTrackIndex === -1) return;
+            lastSwipeTime = now;
+            
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+                if (dx > 0) {
+                    prevTrack();
+                } else {
+                    nextTrack();
+                }
+            }
+        }
+
+        // Функция обработки свайпов для полноэкранного плеера
+        function handleFullPlayerSwipe() {
+            const now = Date.now();
+            if (now - lastSwipeTime < 500 || isAnimating || currentTrackIndex === -1) return;
+            lastSwipeTime = now;
+            
+            const dx = touchEndX - touchStartX;
+            const dy = touchEndY - touchStartY;
+            
+            if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 50) {
+                if (dx > 0) {
+                    prevTrack();
+                } else {
+                    nextTrack();
+                }
+            }
+        }
+
+        // Предотвращаем закрытие приложения в Telegram при свайпе вниз
+        document.addEventListener('touchmove', function(e) {
+            if (preventTgClose && isDragging) {
+                e.preventDefault();
+            }
+        }, { passive: false });
     </script>
 </body>
 </html>
