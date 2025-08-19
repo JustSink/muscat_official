@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      issues: read
 
     steps:
       - name: Checkout repository
@@ -16,36 +17,58 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug info
+      - name: Check for upload command
+        id: check_upload
         run: |
-          echo "🔄 Workflow запущен!"
-          echo "Комментарий: ${{ github.event.comment.body }}"
-          echo "Пользователь: ${{ github.event.comment.user.login }}"
+          # Проверяем команду !upload
+          if echo "${{ github.event.comment.body }}" | grep -q "!upload"; then
+            echo "✅ Команда !upload найдена"
+            echo "has_upload=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Команда !upload не найдена - пропускаем"
+            echo "has_upload=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Create test file
+      - name: Process audio file
+        if: steps.check_upload.outputs.has_upload == 'true'
+        env:
+          ATTACHMENT_URL: ${{ github.event.comment.attachments[0].url }}
+          FILENAME: ${{ github.event.comment.attachments[0].name }}
         run: |
-          # Создаём папку если её нет
+          # Проверяем что есть прикрепленный файл
+          if [ -z "$ATTACHMENT_URL" ]; then
+            echo "❌ Нет прикрепленного файла!"
+            exit 1
+          fi
+
+          # Проверяем формат файла
+          if ! echo "$FILENAME" | grep -E '\.(mp3|wav|ogg|m4a)$'; then
+            echo "❌ Неподдерживаемый формат файла: $FILENAME"
+            exit 1
+          fi
+
+          echo "✅ Найден аудиофайл: $FILENAME"
+          echo "📥 Ссылка для скачивания: $ATTACHMENT_URL"
+
+          # Создаём папку tracks если её нет
           mkdir -p tracks
-          
-          # Создаём тестовый файл с уникальным именем
-          echo "Тестовый файл создан в $(date)" > "tracks/test_$(date +%s).txt"
-          echo "✅ Создан тестовый файл"
 
-      - name: Commit and push changes
-        run: |
+          # Скачиваем файл
+          wget -O "tracks/$FILENAME" "$ATTACHMENT_URL"
+          echo "✅ Файл скачан: tracks/$FILENAME"
+
           # Настраиваем git
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           
-          # Добавляем все изменения
-          git add .
-          
-          # Коммитим
-          git commit -m "✅ Test: Добавлен тестовый файл из workflow"
+          # Коммитим изменения
+          git add tracks/
+          git commit -m "🎵 Добавлен трек: $FILENAME"
           
           # Пушим изменения
-          git push origin HEAD:main
-          echo "🎉 Изменения запушены в репозиторий!"
+          git push
+          echo "🎉 Трек успешно добавлен в библиотеку!"
 
-      - name: Success
-        run: echo "✅ Workflow полностью завершён!"
+      - name: Skip non-upload
+        if: steps.check_upload.outputs.has_upload == 'false'
+        run: echo "ℹ️  Пропускаем - нет команды !upload"
