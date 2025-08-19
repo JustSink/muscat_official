@@ -9,7 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      issues: read
 
     steps:
       - name: Checkout repository
@@ -17,51 +16,21 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug full event data
+      - name: Simple test
         run: |
-          echo "🎯 Полные данные события:"
-          echo "${{ toJSON(github.event) }}"
-
-      - name: Check for upload command
-        id: check_upload
-        run: |
-          if echo "${{ github.event.issue.body }}" | grep -q "!upload"; then
-            echo "✅ Команда !upload найдена в Issue"
-            echo "has_upload=true" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Команда !upload не найдена"
-            echo "has_upload=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Get issue details via API
-        if: steps.check_upload.outputs.has_upload == 'true'
-        id: get_issue
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { data: issue } = await github.rest.issues.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number
-            });
-            
-            console.log('📋 Данные Issue через API:');
-            console.log('Body:', issue.body);
-            console.log('Attachments:', issue.attachments);
-            
-            return issue.attachments || [];
-
-      - name: Create test file manually
-        if: steps.check_upload.outputs.has_upload == 'true'
-        run: |
-          echo "🔄 Создаю тестовый файл вручную..."
+          echo "🔍 Простой тест - создаем файл вручную"
           mkdir -p tracks
-          echo "Тестовый файл создан из Issue #${{ github.event.issue.number }}" > "tracks/test_from_issue_${{ github.event.issue.number }}.txt"
           
+          # Создаем файл с информацией о Issue
+          echo "Issue #${{ github.event.issue.number }}" > "tracks/issue_info.txt"
+          echo "Title: ${{ github.event.issue.title }}" >> "tracks/issue_info.txt"
+          echo "User: ${{ github.event.issue.user.login }}" >> "tracks/issue_info.txt"
+          
+          # Коммитим и пушим
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add tracks/
-          git commit -m "✅ Тест: файл из Issue #${{ github.event.issue.number }}"
+          git commit -m "📝 Информация о Issue #${{ github.event.issue.number }}"
           git push
           
-          echo "🎉 Тестовый файл создан успешно!"
+          echo "✅ Файл создан успешно!"
