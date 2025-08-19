@@ -1,0 +1,29 @@
+name: Tracks Manager
+
+on:
+  push:
+    paths:
+      - 'tracks/*.mp3'
+      - 'tracks/*.wav'
+      - 'tracks/*.ogg'
+
+jobs:
+  update_metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update tracks list
+        run: |
+          echo "🎵 Автоматическое обновление списка треков"
+          echo "Последнее обновление: $(date)" > tracks/LAST_UPDATED.md
+          echo "Количество треков: $(ls tracks/*.mp3 tracks/*.wav tracks/*.ogg 2>/dev/null | wc -l)" >> tracks/LAST_UPDATED.md
+          
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add tracks/LAST_UPDATED.md
+          git commit -m "📊 Обновлен список треков" || echo "🟡 Нет изменений для коммита"
+          git push || echo "🟡 Не удалось запушить"
+          
+          echo "✅ Система треков обновлена!"
