@@ -1,0 +1,48 @@
+name: Upload Tracks from Issues
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  process_track:
+    if: github.event.issue.user.login == 'JustSink'  # Только вы можете загружать
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Разрешить запись в репозиторий
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Find audio attachment
+        id: find_file
+        uses: actions/github-script@v6
+        env:
+          ISSUE_ID: ${{ github.event.issue.number }}
+        script: |
+          const { data: comment } = await github.rest.issues.getComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: context.payload.comment.id
+          });
+
+          const hasUploadCommand = comment.body.includes('!upload');
+          if (!hasUploadCommand) return '';
+
+          const attachment = comment.attachments?.[0];
+          if (!attachment?.name.match(/\.(mp3|ogg|m4a|wav)$/i)) return '';
+
+          return attachment.url;
+
+      - name: Download and save track
+        if: steps.find_file.outputs.result != ''
+        run: |
+          FILENAME="track_$(date +%s).${${ steps.find_file.outputs.result##*. }}"
+          wget "${{ steps.find_file.outputs.result }}" -O "tracks/$FILENAME"
+          
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add tracks/
+          git commit -m "[Auto] Добавлен трек из Issue #${{ github.event.issue.number }}"
+          git push
