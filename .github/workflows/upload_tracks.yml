@@ -13,19 +13,39 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Debug info
         run: |
           echo "🔄 Workflow запущен!"
           echo "Комментарий: ${{ github.event.comment.body }}"
           echo "Пользователь: ${{ github.event.comment.user.login }}"
-          echo "Есть вложения: ${{ toJSON(github.event.comment.attachments) }}"
 
       - name: Create test file
         run: |
+          # Создаём папку если её нет
           mkdir -p tracks
-          echo "Тестовый файл создан в $(date)" > tracks/test_workflow.txt
-          echo "✅ Создан тестовый файл в папке tracks/"
+          
+          # Создаём тестовый файл с уникальным именем
+          echo "Тестовый файл создан в $(date)" > "tracks/test_$(date +%s).txt"
+          echo "✅ Создан тестовый файл"
+
+      - name: Commit and push changes
+        run: |
+          # Настраиваем git
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          
+          # Добавляем все изменения
+          git add .
+          
+          # Коммитим
+          git commit -m "✅ Test: Добавлен тестовый файл из workflow"
+          
+          # Пушим изменения
+          git push origin HEAD:main
+          echo "🎉 Изменения запушены в репозиторий!"
 
       - name: Success
-        run: echo "🎉 Workflow выполнен успешно! Проверьте папку tracks/"
+        run: echo "✅ Workflow полностью завершён!"
