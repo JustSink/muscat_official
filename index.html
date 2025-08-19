@@ -138,7 +138,7 @@
         
         .player-bar {
             position: fixed;
-            bottom: 70px;
+            bottom: 85px; /* Подняли выше */
             left: 0;
             right: 0;
             background: linear-gradient(to right, #3a3a3a, #121212);
@@ -208,7 +208,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            width: 33%;
+            width: 25%; /* Изменили ширину для трех кнопок */
         }
         
         .nav-btn.active {
@@ -344,6 +344,174 @@
         .file-input {
             display: none;
         }
+        
+        /* Новые стили для плейлистов */
+        .playlists-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            padding: 10px;
+        }
+        
+        .playlist-card {
+            aspect-ratio: 1;
+            background: var(--card-bg);
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        
+        .playlist-image {
+            width: 80%;
+            height: 60%;
+            background: linear-gradient(135deg, #6a4cff, #8c73ff);
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 10px;
+            font-size: 30px;
+        }
+        
+        .playlist-name {
+            font-weight: bold;
+            text-align: center;
+            padding: 0 10px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+        }
+        
+        .playlist-count {
+            color: var(--text-secondary);
+            font-size: 12px;
+        }
+        
+        /* Стили для поиска */
+        .search-container {
+            padding: 15px;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 12px 15px;
+            background: #333;
+            border: none;
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+        }
+        
+        .search-results {
+            margin-top: 15px;
+        }
+        
+        /* Стили для полноэкранного плеера */
+        .full-player {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--dark-bg);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transform: translateY(100%);
+            transition: transform 0.4s cubic-bezier(0.3, 0, 0, 1);
+            padding: 20px;
+        }
+        
+        .full-player.active {
+            transform: translateY(0);
+        }
+        
+        .full-player-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .full-player-album-art {
+            width: 80%;
+            max-width: 300px;
+            aspect-ratio: 1;
+            margin: 0 auto 30px;
+            background: linear-gradient(135deg, #6a4cff, #8c73ff);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+        }
+        
+        .full-player-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .full-player-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .full-player-artist {
+            color: var(--text-secondary);
+            font-size: 18px;
+        }
+        
+        .full-player-controls {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .full-player-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        
+        .full-player-btn.main {
+            font-size: 40px;
+        }
+        
+        .full-player-progress {
+            width: 100%;
+            margin: 20px 0;
+        }
+        
+        .full-player-timeline {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        
+        .full-player-progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .full-player-progress-filled {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+        }
     </style>
 </head>
 <body>
@@ -354,9 +522,18 @@
     
     <div id="home-tab" class="tab-content active">
         <div class="main-content">
-            <div class="track-list" id="all-tracks-list">
-                <div class="empty-state">Загрузка треков...</div>
+            <div class="playlists-grid" id="artists-grid">
+                <div class="empty-state">Загрузка плейлистов...</div>
             </div>
+        </div>
+    </div>
+    
+    <div id="search-tab" class="tab-content">
+        <div class="search-container">
+            <input type="text" class="search-input" placeholder="Поиск треков или исполнителей" id="search-input">
+        </div>
+        <div class="search-results" id="search-results">
+            <!-- Результаты поиска будут здесь -->
         </div>
     </div>
     
@@ -391,6 +568,40 @@
         </div>
     </div>
     
+    <!-- Полноэкранный плеер -->
+    <div class="full-player" id="full-player">
+        <div class="full-player-header">
+            <button class="full-player-btn" id="close-full-player">⬇️</button>
+            <span>Сейчас играет</span>
+            <button class="full-player-btn">⋯</button>
+        </div>
+        
+        <div class="full-player-album-art" id="full-player-album-art">🎵</div>
+        
+        <div class="full-player-info">
+            <div class="full-player-title" id="full-player-title">Название трека</div>
+            <div class="full-player-artist" id="full-player-artist">Исполнитель</div>
+        </div>
+        
+        <div class="full-player-progress">
+            <div class="full-player-timeline">
+                <span id="full-player-current-time">0:00</span>
+                <span id="full-player-duration">0:00</span>
+            </div>
+            <div class="full-player-progress-bar" id="full-player-progress-bar">
+                <div class="full-player-progress-filled" id="full-player-progress-filled"></div>
+            </div>
+        </div>
+        
+        <div class="full-player-controls">
+            <button class="full-player-btn" id="shuffle-btn">🔀</button>
+            <button class="full-player-btn" id="prev-btn">⏮</button>
+            <button class="full-player-btn main" id="full-play-btn">▶️</button>
+            <button class="full-player-btn" id="next-btn">⏭</button>
+            <button class="full-player-btn" id="repeat-btn">🔁</button>
+        </div>
+    </div>
+    
     <button class="upload-btn" id="floating-upload-btn" style="display: none;">+</button>
     <input type="file" id="file-input" class="file-input" accept="audio/*">
     
@@ -399,596 +610,972 @@
             <span class="nav-icon">🏠</span>
             <span>Главная</span>
         </button>
+        <button class="nav-btn" data-tab="search-tab">
+            <span class="nav-icon">🔍</span>
+            <span>Поиск</span>
+        </button>
         <button class="nav-btn" data-tab="library-tab">
             <span class="nav-icon">❤️</span>
             <span>Медиатека</span>
         </button>
     </div>
-
-    <script>
-        // ====================== КОНФИГУРАЦИЯ ======================
-        const config = {
-            username: 'JustSink',
-            repo: 'muscat_official',
-            tracksPath: 'tracks',
-            // Токен для доступа к GitHub API (только для админа)
-            // Внимание! Не храните токены в клиентском коде в реальных приложениях!
-            githubToken: 'ghp_your_token_here' // Замените на ваш токен
+<script>
+    // ====================== КОНФИГУРАЦИЯ ======================
+    const config = {
+        username: 'JustSink',
+        repo: 'muscat_official',
+        tracksPath: 'tracks'
+    };
+    
+    // ====================== СОСТОЯНИЕ ПРИЛОЖЕНИЯ ======================
+    const state = {
+        tracks: [],
+        favorites: JSON.parse(localStorage.getItem('favorites')) || [],
+        currentTrack: null,
+        isPlaying: false,
+        isShuffled: false,
+        repeatMode: 'none', // 'none', 'one', 'all'
+        currentPlaylist: null,
+        searchResults: []
+    };
+    
+    // Элементы DOM
+    const audio = new Audio();
+    
+    const elements = {
+        playBtn: document.getElementById('play-btn'),
+        fullPlayBtn: document.getElementById('full-play-btn'),
+        playIcon: document.getElementById('play-icon'),
+        pauseIcon: document.getElementById('pause-icon'),
+        nowPlayingName: document.getElementById('now-playing-name'),
+        nowPlayingArtist: document.getElementById('now-playing-artist'),
+        artistsGrid: document.getElementById('artists-grid'),
+        favoritesList: document.getElementById('favorites-list'),
+        favoritesCount: document.getElementById('favorites-count'),
+        navBtns: document.querySelectorAll('.nav-btn'),
+        progressBar: document.getElementById('progress-bar'),
+        progressContainer: document.getElementById('progress-container'),
+        fullPlayer: document.getElementById('full-player'),
+        fullPlayerTitle: document.getElementById('full-player-title'),
+        fullPlayerArtist: document.getElementById('full-player-artist'),
+        fullPlayerProgressFilled: document.getElementById('full-player-progress-filled'),
+        fullPlayerCurrentTime: document.getElementById('full-player-current-time'),
+        fullPlayerDuration: document.getElementById('full-player-duration'),
+        closeFullPlayer: document.getElementById('close-full-player'),
+        shuffleBtn: document.getElementById('shuffle-btn'),
+        repeatBtn: document.getElementById('repeat-btn'),
+        prevBtn: document.getElementById('prev-btn'),
+        nextBtn: document.getElementById('next-btn'),
+        searchInput: document.getElementById('search-input'),
+        searchResults: document.getElementById('search-results')
+    };
+    
+    let updateProgressInterval;
+    let fullPlayerStartY = 0;
+    let fullPlayerCurrentY = 0;
+    let isDraggingFullPlayer = false;
+    
+    // ====================== ИНИЦИАЛИЗАЦИЯ ======================
+    function init() {
+        // Загрузка сохранённых данных
+        loadState();
+        
+        // Инициализация плеера
+        initPlayer();
+        
+        // Загрузка треков
+        loadTracks();
+        
+        // Инициализация навигации
+        initNavigation();
+        
+        // Инициализация полноэкранного плеера
+        initFullPlayer();
+        
+        // Инициализация поиска
+        initSearch();
+    }
+    
+    function loadState() {
+        const savedState = JSON.parse(localStorage.getItem('musicAppState'));
+        if (savedState) {
+            state.currentTrack = savedState.currentTrack;
+            state.isShuffled = savedState.isShuffled || false;
+            state.repeatMode = savedState.repeatMode || 'none';
+        }
+    }
+    
+    function saveState() {
+        const data = {
+            currentTrack: state.currentTrack,
+            isShuffled: state.isShuffled,
+            repeatMode: state.repeatMode
         };
-        
-        // Ваш Telegram ID (можно узнать через @userinfobot)
-        const ADMIN_ID = 1081129338;
-        
-        // ====================== СОСТОЯНИЕ ПРИЛОЖЕНИЯ ======================
-        const state = {
-            tracks: [],
-            favorites: [],
-            adminMode: false,
-            currentTrack: null,
-            isPlaying: false
-        };
-        
-        // Элементы DOM
-        const audio = new Audio();
-        audio.crossOrigin = "anonymous";
-        
-        const elements = {
-            playBtn: document.getElementById('play-btn'),
-            playIcon: document.getElementById('play-icon'),
-            pauseIcon: document.getElementById('pause-icon'),
-            nowPlayingName: document.getElementById('now-playing-name'),
-            nowPlayingArtist: document.getElementById('now-playing-artist'),
-            allTracksList: document.getElementById('all-tracks-list'),
-            favoritesList: document.getElementById('favorites-list'),
-            favoritesCount: document.getElementById('favorites-count'),
-            navBtns: document.querySelectorAll('.nav-btn'),
-            progressBar: document.getElementById('progress-bar'),
-            progressContainer: document.getElementById('progress-container'),
-            uploadBtn: document.getElementById('upload-btn'),
-            floatingUploadBtn: document.getElementById('floating-upload-btn'),
-            fileInput: document.getElementById('file-input')
-        };
-        
-        let updateProgressInterval;
-        
-        // ====================== ИНИЦИАЛИЗАЦИЯ ======================
-        function init() {
-            // Проверка админского доступа
-            checkAdminAccess();
+        localStorage.setItem('musicAppState', JSON.stringify(data));
+        localStorage.setItem('favorites', JSON.stringify(state.favorites));
+    }
+    
+    // ====================== РАБОТА С ТРЕКАМИ ======================
+    async function loadTracks() {
+        try {
+            // Загрузка треков из GitHub
+            const response = await fetch(`https://api.github.com/repos/${config.username}/${config.repo}/contents/${config.tracksPath}`);
             
-            // Загрузка сохранённых данных
-            loadState();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             
-            // Инициализация плеера
-            initPlayer();
+            const files = await response.json();
             
-            // Загрузка треков
-            loadTracks();
+            state.tracks = files
+                .filter(file => file.name.match(/\.(mp3|ogg|m4a|wav)$/i))
+                .map((file, index) => {
+                    const filename = file.name;
+                    const parsed = parseFileName(filename);
+                    return {
+                        id: `track_${index}`,
+                        file: filename,
+                        name: parsed.name,
+                        artist: parsed.artist,
+                        url: `https://raw.githack.com/${config.username}/${config.repo}/main/${config.tracksPath}/${encodeURIComponent(filename)}`
+                    };
+                });
             
-            // Инициализация навигации
-            initNavigation();
+            renderArtistsGrid();
+            renderFavorites();
             
-            // Инициализация загрузки файлов
-            initUpload();
+            // Восстанавливаем последний воспроизводимый трек
+            if (state.currentTrack) {
+                updatePlayerInfo();
+            }
+        } catch (err) {
+            console.error("Ошибка загрузки треков:", err);
+            elements.artistsGrid.innerHTML = `
+                <div class="empty-state">
+                    Ошибка загрузки треков. Проверьте подключение к интернету.
+                </div>
+            `;
+        }
+    }
+    
+    function parseFileName(filename) {
+        const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
+        
+        // Удаляем номера в начале (01, 02 и т.д.)
+        const cleanName = nameWithoutExt.replace(/^\d+\s*[-._]\s*/, '');
+        
+        // Разные форматы именования
+        if (cleanName.includes(' - ')) {
+            const [artist, name] = cleanName.split(' - ', 2);
+            return {
+                name: name.trim(),
+                artist: artist.trim()
+            };
         }
         
-        function checkAdminAccess() {
-            // Проверка для Telegram WebApp
-            if (typeof Telegram !== 'undefined' && Telegram.WebApp?.initDataUnsafe?.user?.id === ADMIN_ID) {
-                state.adminMode = true;
-                document.body.classList.add('admin');
-                elements.uploadBtn.style.display = 'block';
-                elements.floatingUploadBtn.style.display = 'flex';
+        if (cleanName.includes('_')) {
+            const [artist, name] = cleanName.split('_', 2);
+            return {
+                name: name.trim(),
+                artist: artist.trim()
+            };
+        }
+        
+        // Очистка от спецсимволов
+        const finalName = cleanName
+            .replace(/[^\wа-яА-ЯёЁ\s-]/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+        
+        return {
+            name: finalName || "Без названия",
+            artist: "Неизвестный исполнитель"
+        };
+    }
+    
+    // Группировка треков по исполнителям
+    function groupTracksByArtist() {
+        const artistsMap = {};
+        
+        state.tracks.forEach(track => {
+            if (!artistsMap[track.artist]) {
+                artistsMap[track.artist] = [];
+            }
+            artistsMap[track.artist].push(track);
+        });
+        
+        return artistsMap;
+    }
+    
+    // ====================== ОТОБРАЖЕНИЕ ИНТЕРФЕЙСА ======================
+    function renderArtistsGrid() {
+        const artists = groupTracksByArtist();
+        const artistNames = Object.keys(artists).sort();
+        
+        if (artistNames.length === 0) {
+            elements.artistsGrid.innerHTML = '<div class="empty-state">Нет доступных треков</div>';
+            return;
+        }
+        
+        elements.artistsGrid.innerHTML = artistNames.map(artist => {
+            const tracks = artists[artist];
+            return `
+                <div class="playlist-card" onclick="openArtist('${escapeHtml(artist)}')">
+                    <div class="playlist-image">${getInitials(artist)}</div>
+                    <div class="playlist-name">${artist}</div>
+                    <div class="playlist-count">${tracks.length} ${pluralize(tracks.length, ['трек', 'трека', 'треков'])}</div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    function getInitials(name) {
+        return name.split(' ')
+            .map(word => word.charAt(0))
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+    }
+    
+    function escapeHtml(unsafe) {
+        return unsafe
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+    
+    function pluralize(number, words) {
+        const cases = [2, 0, 1, 1, 1, 2];
+        return words[
+            number % 100 > 4 && number % 100 < 20 
+                ? 2 
+                : cases[Math.min(number % 10, 5)]
+        ];
+    }
+    
+    function openArtist(artistName) {
+        const artists = groupTracksByArtist();
+        const tracks = artists[artistName];
+        
+        if (!tracks) return;
+        
+        state.currentPlaylist = tracks;
+        
+        // Создаем модальное окно со списком треков исполнителя
+        const modalHtml = `
+            <div class="modal">
+                <div class="modal-content">
+                    <h3>${artistName}</h3>
+                    <div class="track-list">
+                        ${tracks.map((track, index) => `
+                            <div class="track-item" onclick="playTrack('${track.id}'); this.closest('.modal').remove()">
+                                <div class="track-number">${index + 1}</div>
+                                <div class="track-info">
+                                    <div class="track-name">${track.name}</div>
+                                    <div class="track-artist">${track.artist}</div>
+                                </div>
+                                <button class="favorite-btn ${isFavorite(track.id) ? 'active' : ''}" 
+                                        onclick="toggleFavorite('${track.id}', event)">
+                                    ${isFavorite(track.id) ? '❤️' : '🤍'}
+                                </button>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="modal-buttons">
+                        <button class="modal-btn" onclick="this.closest('.modal').remove()">Закрыть</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+    }
+    
+    function renderFavorites() {
+        const favoriteTracks = state.tracks.filter(track => isFavorite(track.id));
+        
+        elements.favoritesList.innerHTML = favoriteTracks.length > 0
+            ? favoriteTracks.map((track, index) => renderTrackItem(track, index + 1)).join('')
+            : '<div class="empty-state">Нет избранных треков</div>';
+        
+        elements.favoritesCount.textContent = `${favoriteTracks.length} ${pluralize(favoriteTracks.length, ['трек', 'трека', 'треков'])}`;
+    }
+    
+    function renderTrackItem(track, number) {
+        return `
+            <div class="track-item" onclick="playTrack('${track.id}')">
+                <div class="track-number">${number}</div>
+                <div class="track-info">
+                    <div class="track-name">${track.name}</div>
+                    <div class="track-artist">${track.artist}</div>
+                </div>
+                <button class="favorite-btn ${isFavorite(track.id) ? 'active' : ''}" 
+                        onclick="toggleFavorite('${track.id}', event)">
+                    ${isFavorite(track.id) ? '❤️' : '🤍'}
+                </button>
+            </div>
+        `;
+    }
+    
+    // ====================== ИЗБРАННЫЕ ТРЕКИ ======================
+    function toggleFavorite(trackId, event) {
+        if (event) event.stopPropagation();
+        
+        const index = state.favorites.indexOf(trackId);
+        
+        if (index === -1) {
+            state.favorites.push(trackId);
+        } else {
+            state.favorites.splice(index, 1);
+        }
+        
+        saveState();
+        renderFavorites();
+        
+        // Обновляем иконки в других местах
+        document.querySelectorAll(`.favorite-btn[onclick*="${trackId}"]`).forEach(btn => {
+            if (isFavorite(trackId)) {
+                btn.classList.add('active');
+                btn.innerHTML = '❤️';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '🤍';
+            }
+        });
+    }
+    
+    function isFavorite(trackId) {
+        return state.favorites.includes(trackId);
+    }
+    
+    // ====================== ПОИСК ======================
+    function initSearch() {
+        elements.searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            
+            if (query.length < 2) {
+                elements.searchResults.innerHTML = '';
                 return;
             }
             
-            // Проверка для тестирования в браузере
-            if (window.location.href.includes("?admin")) {
-                state.adminMode = true;
-                document.body.classList.add('admin');
-                elements.uploadBtn.style.display = 'block';
-                elements.floatingUploadBtn.style.display = 'flex';
-                console.log("Админский режим активирован через URL");
-            }
-        }
-        
-        // ====================== СИСТЕМА СОХРАНЕНИЯ ======================
-        function loadState() {
-            const saved = localStorage.getItem('musicAppState');
-            if (saved) {
-                try {
-                    const parsed = JSON.parse(saved);
-                    state.favorites = parsed.favorites || [];
-                    state.adminMode = parsed.adminMode || false;
-                } catch (e) {
-                    console.error("Ошибка загрузки состояния:", e);
-                }
-            }
-        }
-        
-        function saveState() {
-            const data = {
-                favorites: state.favorites,
-                adminMode: state.adminMode,
-                lastPlayedTrack: state.currentTrack?.id
+            // Поиск по исполнителям и названиям треков
+            const results = {
+                artists: [],
+                tracks: []
             };
-            localStorage.setItem('musicAppState', JSON.stringify(data));
-        }
-        
-        // ====================== РАБОТА С ТРЕКАМИ ======================
-        async function loadTracks() {
-            try {
-                // Пробуем загрузить сохранённые метаданные
-                const savedMetadata = JSON.parse(localStorage.getItem('tracksMetadata')) || {};
-                
-                // Если в конфиге указаны конкретные треки, используем их
-                if (config.tracks && Array.isArray(config.tracks)) {
-                    state.tracks = config.tracks.map((track, index) => ({
-                        id: `track_${index}`,
-                        file: track.file,
-                        name: track.name || parseFileName(track.file).name,
-                        artist: track.artist || parseFileName(track.file).artist,
-                        lyrics: track.lyrics || ""
-                    }));
-                    renderTrackLists();
-                    return;
-                }
-                
-                // Загрузка треков из GitHub
-                const response = await fetch(`https://api.github.com/repos/${config.username}/${config.repo}/contents/${config.tracksPath}`);
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const files = await response.json();
-                
-                state.tracks = files
-                    .filter(file => file.name.match(/\.(mp3|ogg|m4a|wav)$/i))
-                    .map((file, index) => {
-                        const filename = file.name;
-                        return savedMetadata[filename] || {
-                            id: `track_${index}`,
-                            file: filename,
-                            ...parseFileName(filename),
-                            lyrics: ""
-                        };
+            
+            const artists = groupTracksByArtist();
+            
+            // Поиск исполнителей
+            Object.keys(artists).forEach(artist => {
+                if (artist.toLowerCase().includes(query)) {
+                    results.artists.push({
+                        type: 'artist',
+                        name: artist,
+                        tracks: artists[artist]
                     });
-                
-                renderTrackLists();
-                
-                // Восстанавливаем последний воспроизводимый трек
-                const savedState = JSON.parse(localStorage.getItem('musicAppState')) || {};
-                if (savedState.lastPlayedTrack) {
-                    const lastTrack = state.tracks.find(t => t.id === savedState.lastPlayedTrack);
-                    if (lastTrack) {
-                        state.currentTrack = lastTrack;
-                        updatePlayerInfo();
-                    }
                 }
-            } catch (err) {
-                console.error("Ошибка загрузки треков:", err);
-                elements.allTracksList.innerHTML = `
-                    <div class="empty-state">
-                        Ошибка загрузки треков. Проверьте подключение к интернету.
+            });
+            
+            // Поиск треков
+            state.tracks.forEach(track => {
+                if (track.name.toLowerCase().includes(query) || 
+                    track.artist.toLowerCase().includes(query)) {
+                    results.tracks.push({
+                        type: 'track',
+                        ...track
+                    });
+                }
+            });
+            
+            renderSearchResults(results);
+        });
+    }
+    
+    function renderSearchResults(results) {
+        let html = '';
+        
+        // Исполнители
+        if (results.artists.length > 0) {
+            html += `<div class="library-item"><div class="library-item-title">Исполнители</div></div>`;
+            
+            results.artists.forEach(artist => {
+                html += `
+                    <div class="library-item" onclick="openArtist('${escapeHtml(artist.name)}')">
+                        <div class="library-item-title">${artist.name}</div>
+                        <div class="library-item-subtitle">${artist.tracks.length} ${pluralize(artist.tracks.length, ['трек', 'трека', 'треков'])}</div>
                     </div>
                 `;
-            }
-        }
-        
-        function parseFileName(filename) {
-            const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
-            
-            // Удаляем номера в начале (01, 02 и т.д.)
-            const cleanName = nameWithoutExt.replace(/^\d+\s*[-._]\s*/, '');
-            
-            // Разные форматы именования
-            if (cleanName.includes(' - ')) {
-                const [artist, name] = cleanName.split(' - ', 2);
-                return {
-                    name: name.trim(),
-                    artist: artist.trim()
-                };
-            }
-            
-            if (cleanName.includes('_')) {
-                const [artist, name] = cleanName.split('_', 2);
-                return {
-                    name: name.trim(),
-                    artist: artist.trim()
-                };
-            }
-            
-            // Очистка от спецсимволов
-            const finalName = cleanName
-                .replace(/[^\wа-яА-ЯёЁ\s-]/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
-            
-            return {
-                name: finalName || "Без названия",
-                artist: "Неизвестный исполнитель"
-            };
-        }
-        
-        // ====================== ИЗБРАННЫЕ ТРЕКИ ======================
-        function toggleFavorite(trackId, event) {
-            if (event) event.stopPropagation();
-            
-            const index = state.favorites.indexOf(trackId);
-            
-            if (index === -1) {
-                state.favorites.push(trackId);
-            } else {
-                state.favorites.splice(index, 1);
-            }
-            
-            saveState();
-            renderTrackLists();
-        }
-        
-        function isFavorite(trackId) {
-            return state.favorites.includes(trackId);
-        }
-        
-        // ====================== ОТРИСОВКА ИНТЕРФЕЙСА ======================
-        function renderTrackLists() {
-            // Главная страница (все треки)
-            elements.allTracksList.innerHTML = state.tracks.length > 0 
-                ? state.tracks.map((track, index) => renderTrackItem(track, index + 1)).join('')
-                : '<div class="empty-state">Нет доступных треков</div>';
-            
-            // Страница избранного
-            const favoriteTracks = state.tracks.filter(track => isFavorite(track.id));
-            elements.favoritesList.innerHTML = favoriteTracks.length > 0
-                ? favoriteTracks.map((track, index) => renderTrackItem(track, index + 1, true)).join('')
-                : '<div class="empty-state">Нет избранных треков</div>';
-            
-            elements.favoritesCount.textContent = `${favoriteTracks.length} ${pluralize(favoriteTracks.length, ['трек', 'трека', 'треков'])}`;
-        }
-        
-        function renderTrackItem(track, number, isFavoriteItem = false) {
-            return `
-                <div class="track-item" onclick="playTrack('${track.id}')">
-                    <div class="track-number">${number}</div>
-                    <div class="track-info">
-                        <div class="track-name">${track.name}</div>
-                        <div class="track-artist">${track.artist}</div>
-                    </div>
-                    <button class="favorite-btn ${isFavorite(track.id) ? 'active' : ''}" 
-                            onclick="toggleFavorite('${track.id}', event)">
-                        ❤️
-                    </button>
-                    ${state.adminMode ? `
-                    <button class="edit-btn" onclick="event.stopPropagation(); showEditModal('${track.id}')">
-                        ✏️
-                    </button>
-                    ` : ''}
-                </div>
-            `;
-        }
-        
-        function pluralize(number, words) {
-            const cases = [2, 0, 1, 1, 1, 2];
-            return words[
-                number % 100 > 4 && number % 100 < 20 
-                    ? 2 
-                    : cases[Math.min(number % 10, 5)]
-            ];
-        }
-        
-        // ====================== РЕДАКТИРОВАНИЕ ТРЕКОВ ======================
-        function showEditModal(trackId) {
-            if (!state.adminMode) return;
-            
-            const track = state.tracks.find(t => t.id === trackId);
-            if (!track) return;
-            
-            const modalHtml = `
-                <div class="modal">
-                    <div class="modal-content">
-                        <h3>Редактирование трека</h3>
-                        <input type="text" id="edit-name" value="${escapeHtml(track.name)}" placeholder="Название">
-                        <input type="text" id="edit-artist" value="${escapeHtml(track.artist)}" placeholder="Исполнитель">
-                        <textarea id="edit-lyrics" placeholder="Текст песни (опционально)">${escapeHtml(track.lyrics || '')}</textarea>
-                        <div class="modal-buttons">
-                            <button class="modal-btn" onclick="this.closest('.modal').remove()">Отмена</button>
-                            <button class="modal-btn save" onclick="saveTrackChanges('${trackId}')">Сохранить</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-        }
-        
-        function escapeHtml(unsafe) {
-            return unsafe
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
-        
-        function saveTrackChanges(trackId) {
-            const track = state.tracks.find(t => t.id === trackId);
-            if (!track) return;
-            
-            track.name = document.getElementById('edit-name').value || track.name;
-            track.artist = document.getElementById('edit-artist').value || track.artist;
-            track.lyrics = document.getElementById('edit-lyrics').value || "";
-            
-            // Сохраняем метаданные
-            const metadata = JSON.parse(localStorage.getItem('tracksMetadata')) || {};
-            metadata[track.file] = {
-                id: track.id,
-                name: track.name,
-                artist: track.artist,
-                lyrics: track.lyrics,
-                file: track.file
-            };
-            localStorage.setItem('tracksMetadata', JSON.stringify(metadata));
-            
-            document.querySelector('.modal').remove();
-            renderTrackLists();
-            
-            // Обновляем плеер, если редактируется текущий трек
-            if (state.currentTrack?.id === trackId) {
-                updatePlayerInfo();
-            }
-        }
-        
-        // ====================== ЗАГРУЗКА ТРЕКОВ ======================
-        function initUpload() {
-            if (!state.adminMode) return;
-            
-            elements.uploadBtn.addEventListener('click', () => {
-                elements.fileInput.click();
-            });
-            
-            elements.floatingUploadBtn.addEventListener('click', () => {
-                elements.fileInput.click();
-            });
-            
-            elements.fileInput.addEventListener('change', async (e) => {
-                const files = e.target.files;
-                if (files.length === 0) return;
-                
-                showUploadModal(files);
             });
         }
         
-        function showUploadModal(files) {
-            const modalHtml = `
-                <div class="modal">
-                    <div class="modal-content">
-                        <h3>Загрузка ${files.length} трека(ов)</h3>
-                        <div id="upload-status">
-                            ${Array.from(files).map(file => `
-                                <div class="upload-file" data-filename="${escapeHtml(file.name)}">
-                                    <div>${escapeHtml(file.name)}</div>
-                                    <div class="upload-progress">Ожидание...</div>
-                                </div>
-                            `).join('')}
+        // Треки
+        if (results.tracks.length > 0) {
+            html += `<div class="library-item"><div class="library-item-title">Треки</div></div>`;
+            
+            results.tracks.forEach(track => {
+                html += `
+                    <div class="track-item" onclick="playTrack('${track.id}')">
+                        <div class="track-info">
+                            <div class="track-name">${track.name}</div>
+                            <div class="track-artist">${track.artist}</div>
                         </div>
-                        <div class="modal-buttons">
-                            <button class="modal-btn" onclick="this.closest('.modal').remove()">Закрыть</button>
-                        </div>
+                        <button class="favorite-btn ${isFavorite(track.id) ? 'active' : ''}" 
+                                onclick="toggleFavorite('${track.id}', event)">
+                            ${isFavorite(track.id) ? '❤️' : '🤍'}
+                        </button>
                     </div>
-                </div>
-            `;
-            
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            
-            // Начинаем загрузку
-            uploadFiles(files);
+                `;
+            });
         }
         
-        async function uploadFiles(files) {
-            if (!state.adminMode) return;
-            
-            for (const file of files) {
-                try {
-                    updateUploadStatus(file.name, 'Загрузка на GitHub...');
-                    
-                    // Читаем файл как base64
-                    const base64Content = await readFileAsBase64(file);
-                    
-                    // Создаем запрос на загрузку
-                    const response = await uploadToGitHub(file.name, base64Content);
-                    
-                    if (response.content) {
-                        updateUploadStatus(file.name, 'Успешно загружено!');
-                        
-                        // Добавляем трек в список
-                        const newTrack = {
-                            id: `track_${Date.now()}`,
-                            file: file.name,
-                            name: parseFileName(file.name).name,
-                            artist: parseFileName(file.name).artist,
-                            lyrics: ""
-                        };
-                        
-                        state.tracks.push(newTrack);
-                        
-                        // Сохраняем метаданные
-                        const metadata = JSON.parse(localStorage.getItem('tracksMetadata')) || {};
-                        metadata[file.name] = newTrack;
-                        localStorage.setItem('tracksMetadata', JSON.stringify(metadata));
-                        
-                        renderTrackLists();
-                    } else {
-                        updateUploadStatus(file.name, 'Ошибка загрузки');
+        if (!html) {
+            html = '<div class="empty-state">Ничего не найдено</div>';
+        }
+        
+        elements.searchResults.innerHTML = html;
+    }
+</script>
+<script>
+    // ====================== ПЛЕЕР ======================
+    function initPlayer() {
+        elements.playBtn.addEventListener('click', togglePlayPause);
+        elements.fullPlayBtn.addEventListener('click', togglePlayPause);
+        
+        audio.addEventListener('play', () => {
+            state.isPlaying = true;
+            updatePlayPauseIcons();
+            clearInterval(updateProgressInterval);
+            updateProgressInterval = setInterval(updateProgress, 1000);
+        });
+        
+        audio.addEventListener('pause', () => {
+            state.isPlaying = false;
+            updatePlayPauseIcons();
+            clearInterval(updateProgressInterval);
+        });
+        
+        audio.addEventListener('ended', handleTrackEnd);
+        
+        audio.addEventListener('error', () => {
+            alert("Ошибка загрузки трека");
+            state.isPlaying = false;
+            updatePlayPauseIcons();
+        });
+        
+        elements.progressContainer.addEventListener('click', (e) => {
+            if (!audio.duration) return;
+            const percent = e.offsetX / elements.progressContainer.offsetWidth;
+            audio.currentTime = percent * audio.duration;
+            updateFullPlayerProgress();
+        });
+        
+        // Кнопки управления полноэкранного плеера
+        elements.prevBtn.addEventListener('click', playPreviousTrack);
+        elements.nextBtn.addEventListener('click', playNextTrack);
+        elements.shuffleBtn.addEventListener('click', toggleShuffle);
+        elements.repeatBtn.addEventListener('click', toggleRepeat);
+        
+        // Прогресс полноэкранного плеера
+        elements.fullPlayerProgressFilled.addEventListener('click', (e) => {
+            if (!audio.duration) return;
+            const progressBar = elements.fullPlayerProgressFilled.parentElement;
+            const percent = e.offsetX / progressBar.offsetWidth;
+            audio.currentTime = percent * audio.duration;
+            updateFullPlayerProgress();
+        });
+    }
+    
+    function playTrack(trackId) {
+        const track = state.tracks.find(t => t.id === trackId);
+        if (!track) return;
+        
+        state.currentTrack = track;
+        audio.src = track.url;
+        
+        audio.play().catch(err => {
+            console.error("Ошибка воспроизведения:", err);
+            alert("Не удалось воспроизвести трек");
+        });
+        
+        updatePlayerInfo();
+        updateFullPlayerInfo();
+        saveState();
+    }
+    
+    function updatePlayerInfo() {
+        if (!state.currentTrack) return;
+        
+        elements.nowPlayingName.textContent = state.currentTrack.name;
+        elements.nowPlayingArtist.textContent = state.currentTrack.artist;
+    }
+    
+    function updateFullPlayerInfo() {
+        if (!state.currentTrack) return;
+        
+        elements.fullPlayerTitle.textContent = state.currentTrack.name;
+        elements.fullPlayerArtist.textContent = state.currentTrack.artist;
+        elements.fullPlayerAlbumArt.textContent = getInitials(state.currentTrack.artist);
+        
+        // Обновляем время
+        updateFullPlayerTime();
+    }
+    
+    function updateFullPlayerTime() {
+        if (!audio.duration) return;
+        
+        const currentMinutes = Math.floor(audio.currentTime / 60);
+        const currentSeconds = Math.floor(audio.currentTime % 60);
+        const durationMinutes = Math.floor(audio.duration / 60);
+        const durationSeconds = Math.floor(audio.duration % 60);
+        
+        elements.fullPlayerCurrentTime.textContent = 
+            `${currentMinutes}:${currentSeconds.toString().padStart(2, '0')}`;
+        elements.fullPlayerDuration.textContent = 
+            `${durationMinutes}:${durationSeconds.toString().padStart(2, '0')}`;
+    }
+    
+    function togglePlayPause() {
+        if (!state.currentTrack && state.tracks.length > 0) {
+            playTrack(state.tracks[0].id);
+            return;
+        }
+        
+        if (state.isPlaying) {
+            audio.pause();
+        } else {
+            audio.play().catch(err => {
+                if (!state.currentTrack && state.tracks.length > 0) {
+                    playTrack(state.tracks[0].id);
+                }
+            });
+        }
+    }
+    
+    function updatePlayPauseIcons() {
+        elements.playIcon.style.display = state.isPlaying ? 'none' : 'block';
+        elements.pauseIcon.style.display = state.isPlaying ? 'flex' : 'none';
+        
+        // Обновляем кнопку полноэкранного плеера
+        elements.fullPlayBtn.textContent = state.isPlaying ? '⏸️' : '▶️';
+    }
+    
+    function updateProgress() {
+        if (audio.duration) {
+            const percent = (audio.currentTime / audio.duration) * 100;
+            elements.progressBar.style.width = `${percent}%`;
+            updateFullPlayerProgress();
+        }
+    }
+    
+    function updateFullPlayerProgress() {
+        if (audio.duration) {
+            const percent = (audio.currentTime / audio.duration) * 100;
+            elements.fullPlayerProgressFilled.style.width = `${percent}%`;
+            updateFullPlayerTime();
+        }
+    }
+    
+    function handleTrackEnd() {
+        switch (state.repeatMode) {
+            case 'one':
+                audio.currentTime = 0;
+                audio.play();
+                break;
+            case 'all':
+                playNextTrack();
+                break;
+            default:
+                if (state.currentPlaylist) {
+                    const currentIndex = state.currentPlaylist.findIndex(t => t.id === state.currentTrack.id);
+                    if (currentIndex < state.currentPlaylist.length - 1) {
+                        playNextTrack();
                     }
-                } catch (error) {
-                    console.error('Ошибка загрузки файла:', error);
-                    updateUploadStatus(file.name, 'Ошибка: ' + error.message);
+                } else {
+                    playNextTrack();
                 }
+        }
+    }
+    
+    function playNextTrack() {
+        if (!state.currentTrack || state.tracks.length === 0) return;
+        
+        let nextTrack;
+        
+        if (state.currentPlaylist) {
+            const currentIndex = state.currentPlaylist.findIndex(t => t.id === state.currentTrack.id);
+            if (state.isShuffled) {
+                const randomIndex = Math.floor(Math.random() * state.currentPlaylist.length);
+                nextTrack = state.currentPlaylist[randomIndex];
+            } else {
+                nextTrack = state.currentPlaylist[(currentIndex + 1) % state.currentPlaylist.length];
+            }
+        } else {
+            const currentIndex = state.tracks.findIndex(t => t.id === state.currentTrack.id);
+            if (state.isShuffled) {
+                const randomIndex = Math.floor(Math.random() * state.tracks.length);
+                nextTrack = state.tracks[randomIndex];
+            } else {
+                nextTrack = state.tracks[(currentIndex + 1) % state.tracks.length];
             }
         }
         
-        function updateUploadStatus(filename, status) {
-            const uploadElements = document.querySelectorAll('.upload-file');
-            uploadElements.forEach(el => {
-                if (el.getAttribute('data-filename') === filename) {
-                    el.querySelector('.upload-progress').textContent = status;
-                }
-            });
+        playTrack(nextTrack.id);
+    }
+    
+    function playPreviousTrack() {
+        if (!state.currentTrack || state.tracks.length === 0) return;
+        
+        let prevTrack;
+        
+        if (state.currentPlaylist) {
+            const currentIndex = state.currentPlaylist.findIndex(t => t.id === state.currentTrack.id);
+            if (state.isShuffled) {
+                const randomIndex = Math.floor(Math.random() * state.currentPlaylist.length);
+                prevTrack = state.currentPlaylist[randomIndex];
+            } else {
+                prevTrack = state.currentPlaylist[(currentIndex - 1 + state.currentPlaylist.length) % state.currentPlaylist.length];
+            }
+        } else {
+            const currentIndex = state.tracks.findIndex(t => t.id === state.currentTrack.id);
+            if (state.isShuffled) {
+                const randomIndex = Math.floor(Math.random() * state.tracks.length);
+                prevTrack = state.tracks[randomIndex];
+            } else {
+                prevTrack = state.tracks[(currentIndex - 1 + state.tracks.length) % state.tracks.length];
+            }
         }
         
-        function readFileAsBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const base64String = reader.result.split(',')[1];
-                    resolve(base64String);
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
+        playTrack(prevTrack.id);
+    }
+    
+    function toggleShuffle() {
+        state.isShuffled = !state.isShuffled;
+        elements.shuffleBtn.style.opacity = state.isShuffled ? '1' : '0.5';
+        saveState();
+    }
+    
+    function toggleRepeat() {
+        const modes = ['none', 'one', 'all'];
+        const currentIndex = modes.indexOf(state.repeatMode);
+        state.repeatMode = modes[(currentIndex + 1) % modes.length];
+        
+        // Обновляем иконку
+        elements.repeatBtn.textContent = 
+            state.repeatMode === 'one' ? '🔂' : 
+            state.repeatMode === 'all' ? '🔁' : '🔁';
+        elements.repeatBtn.style.opacity = state.repeatMode === 'none' ? '0.5' : '1';
+        
+        saveState();
+    }
+    
+    // ====================== ПОЛНОЭКРАННЫЙ ПЛЕЕР ======================
+    function initFullPlayer() {
+        // Открытие полноэкранного плеера при клике на мини-плеер
+        elements.miniPlayer.addEventListener('click', openFullPlayer);
+        
+        // Закрытие полноэкранного плеера
+        elements.closeFullPlayer.addEventListener('click', closeFullPlayer);
+        
+        // Свайп для закрытия
+        elements.fullPlayer.addEventListener('touchstart', handleFullPlayerTouchStart);
+        elements.fullPlayer.addEventListener('touchmove', handleFullPlayerTouchMove);
+        elements.fullPlayer.addEventListener('touchend', handleFullPlayerTouchEnd);
+    }
+    
+    function openFullPlayer() {
+        if (!state.currentTrack) return;
+        
+        elements.fullPlayer.classList.add('active');
+        updateFullPlayerInfo();
+        updateFullPlayerProgress();
+        updateFullPlayerTime();
+    }
+    
+    function closeFullPlayer() {
+        elements.fullPlayer.classList.remove('active');
+    }
+    
+    function handleFullPlayerTouchStart(e) {
+        fullPlayerStartY = e.touches[0].clientY;
+        isDraggingFullPlayer = true;
+    }
+    
+    function handleFullPlayerTouchMove(e) {
+        if (!isDraggingFullPlayer) return;
+        
+        fullPlayerCurrentY = e.touches[0].clientY;
+        const deltaY = fullPlayerCurrentY - fullPlayerStartY;
+        
+        if (deltaY > 0) {
+            elements.fullPlayer.style.transform = `translateY(${deltaY}px)`;
         }
         
-        async function uploadToGitHub(filename, content) {
-            const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${config.tracksPath}/${filename}`;
-            
-            const response = await fetch(apiUrl, {
-                method: 'PUT',
-                headers: {
-                    'Authorization': `token ${config.githubToken}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    message: `Add ${filename}`,
-                    content: content,
-                    branch: 'main'
-                })
-            });
-            
-            return await response.json();
+        e.preventDefault();
+    }
+    
+    function handleFullPlayerTouchEnd() {
+        isDraggingFullPlayer = false;
+        
+        const deltaY = fullPlayerCurrentY - fullPlayerStartY;
+        const screenHeight = window.innerHeight;
+        
+        if (deltaY > screenHeight / 3) {
+            // Закрываем, если свайпнули достаточно далеко
+            closeFullPlayer();
+        } else {
+            // Возвращаем на место
+            elements.fullPlayer.style.transform = 'translateY(0)';
         }
         
-        // ====================== ПЛЕЕР ======================
-        function initPlayer() {
-            elements.playBtn.addEventListener('click', togglePlayPause);
-            
-            audio.addEventListener('play', () => {
-                state.isPlaying = true;
-                updatePlayPauseIcons();
-                clearInterval(updateProgressInterval);
-                updateProgressInterval = setInterval(updateProgress, 1000);
+        // Сбрасываем стиль
+        setTimeout(() => {
+            elements.fullPlayer.style.transform = '';
+        }, 300);
+    }
+    
+    // ====================== НАВИГАЦИЯ ======================
+    function initNavigation() {
+        elements.navBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                elements.navBtns.forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                const tabId = this.getAttribute('data-tab');
+                document.querySelectorAll('.tab-content').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.getElementById(tabId).classList.add('active');
+                
+                document.getElementById('app-header').textContent = 
+                    tabId === 'home-tab' ? 'MusCat' : 
+                    tabId === 'search-tab' ? 'Поиск' : 'Медиатека';
             });
-            
-            audio.addEventListener('pause', () => {
-                state.isPlaying = false;
-                updatePlayPauseIcons();
-                clearInterval(updateProgressInterval);
-            });
-            
-            audio.addEventListener('ended', playNextTrack);
-            
-            audio.addEventListener('error', () => {
-                alert("Ошибка загрузки трека");
-                state.isPlaying = false;
-                updatePlayPauseIcons();
-            });
-            
-            elements.progressContainer.addEventListener('click', (e) => {
-                if (!audio.duration) return;
-                const percent = e.offsetX / elements.progressContainer.offsetWidth;
-                audio.currentTime = percent * audio.duration;
-            });
+        });
+    }
+    
+    // Запускаем приложение
+    init();
+    
+    // Глобальные функции для использования в HTML
+    window.playTrack = playTrack;
+    window.toggleFavorite = toggleFavorite;
+    window.openArtist = openArtist;
+</script>
+<script>
+    // ====================== ДОПОЛНИТЕЛЬНЫЕ ФУНКЦИИ ======================
+    
+    // Автопрокрутка к текущему треку в плейлисте
+    function scrollToCurrentTrack() {
+        if (!state.currentTrack) return;
+        
+        const trackElement = document.querySelector(`.track-item[onclick*="${state.currentTrack.id}"]`);
+        if (trackElement) {
+            trackElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+    
+    // Форматирование времени
+    function formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    // Проверка видимости элемента
+    function isElementInViewport(el) {
+        const rect = el.getBoundingClientRect();
+        return (
+            rect.top >= 0 &&
+            rect.left >= 0 &&
+            rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+            rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+        );
+    }
+    
+    // Обработка клавиш управления
+    document.addEventListener('keydown', (e) => {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            togglePlayPause();
+        } else if (e.code === 'ArrowRight') {
+            playNextTrack();
+        } else if (e.code === 'ArrowLeft') {
+            playPreviousTrack();
+        }
+    });
+    
+    // Сохранение состояния при закрытии
+    window.addEventListener('beforeunload', saveState);
+    
+    // Восстановление позиции прокрутки
+    window.addEventListener('load', () => {
+        const scrollPosition = localStorage.getItem('scrollPosition');
+        if (scrollPosition) {
+            window.scrollTo(0, parseInt(scrollPosition));
+        }
+    });
+    
+    window.addEventListener('scroll', () => {
+        localStorage.setItem('scrollPosition', window.scrollY);
+    });
+    
+    // Адаптация под разные размеры экрана
+    function checkScreenSize() {
+        const isMobile = window.innerWidth <= 768;
+        document.body.classList.toggle('mobile', isMobile);
+    }
+    
+    window.addEventListener('resize', checkScreenSize);
+    checkScreenSize();
+    
+    // Preload следующего трека
+    function preloadNextTrack() {
+        if (!state.currentTrack || state.tracks.length < 2) return;
+        
+        const currentIndex = state.tracks.findIndex(t => t.id === state.currentTrack.id);
+        const nextIndex = (currentIndex + 1) % state.tracks.length;
+        const nextTrack = state.tracks[nextIndex];
+        
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'audio';
+        link.href = nextTrack.url;
+        document.head.appendChild(link);
+    }
+    
+    // Уведомления о изменениях
+    function showNotification(message, duration = 3000) {
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 25px;
+            z-index: 10000;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.opacity = '1';
+        }, 10);
+        
+        setTimeout(() => {
+            notification.style.opacity = '0';
+            setTimeout(() => {
+                document.body.removeChild(notification);
+            }, 300);
+        }, duration);
+    }
+    
+    // ====================== ОПТИМИЗАЦИЯ ПРОИГРЫВАТЕЛЯ ======================
+    
+    // Кэширование аудио
+    const audioCache = new Map();
+    
+    async function getCachedAudio(url) {
+        if (audioCache.has(url)) {
+            return audioCache.get(url);
         }
         
-        function playTrack(trackId) {
-            const track = state.tracks.find(t => t.id === trackId);
-            if (!track) return;
-            
-            state.currentTrack = track;
-            audio.src = `https://raw.githack.com/${config.username}/${config.repo}/main/${config.tracksPath}/${encodeURIComponent(track.file)}`;
+        try {
+            const response = await fetch(url);
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            audioCache.set(url, objectUrl);
+            return objectUrl;
+        } catch (error) {
+            console.error('Ошибка кэширования аудио:', error);
+            return url;
+        }
+    }
+    
+    // Обновленная функция playTrack с кэшированием
+    async function playTrack(trackId) {
+        const track = state.tracks.find(t => t.id === trackId);
+        if (!track) return;
+        
+        state.currentTrack = track;
+        
+        try {
+            const cachedUrl = await getCachedAudio(track.url);
+            audio.src = cachedUrl;
             
             audio.play().catch(err => {
                 console.error("Ошибка воспроизведения:", err);
+                // Пробуем оригинальный URL если кэшированный не работает
+                if (cachedUrl !== track.url) {
+                    audio.src = track.url;
+                    audio.play().catch(err => {
+                        alert("Не удалось воспроизвести трек");
+                    });
+                } else {
+                    alert("Не удалось воспроизвести трек");
+                }
+            });
+        } catch (error) {
+            console.error("Ошибка загрузки трека:", error);
+            audio.src = track.url;
+            audio.play().catch(err => {
                 alert("Не удалось воспроизвести трек");
             });
-            
-            updatePlayerInfo();
-            saveState();
         }
         
-        function updatePlayerInfo() {
-            if (!state.currentTrack) return;
-            
-            elements.nowPlayingName.textContent = state.currentTrack.name;
-            elements.nowPlayingArtist.textContent = state.currentTrack.artist;
+        updatePlayerInfo();
+        updateFullPlayerInfo();
+        saveState();
+        preloadNextTrack();
+    }
+    
+    // ====================== ФИНАЛЬНАЯ ИНИЦИАЛИЗАЦИЯ ======================
+    
+    // Добавляем мини-плеер в элементы
+    elements.miniPlayer = document.getElementById('mini-player');
+    
+    // Инициализируем состояние кнопок повтора и перемешивания
+    window.addEventListener('load', () => {
+        elements.shuffleBtn.style.opacity = state.isShuffled ? '1' : '0.5';
+        elements.repeatBtn.textContent = 
+            state.repeatMode === 'one' ? '🔂' : 
+            state.repeatMode === 'all' ? '🔁' : '🔁';
+        elements.repeatBtn.style.opacity = state.repeatMode === 'none' ? '0.5' : '1';
+    });
+    
+    // Задержка для анимаций
+    function delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    // Плавное появление элементов
+    async function animateElements() {
+        const elements = document.querySelectorAll('.playlist-card, .track-item');
+        for (let i = 0; i < elements.length; i++) {
+            elements[i].style.opacity = '0';
+            elements[i].style.transform = 'translateY(20px)';
         }
         
-        function playNextTrack() {
-            if (!state.currentTrack || state.tracks.length === 0) return;
-            
-            const currentIndex = state.tracks.findIndex(t => t.id === state.currentTrack.id);
-            if (currentIndex === -1) return;
-            
-            const nextIndex = (currentIndex + 1) % state.tracks.length;
-            playTrack(state.tracks[nextIndex].id);
+        await delay(100);
+        
+        for (let i = 0; i < elements.length; i++) {
+            await delay(50);
+            elements[i].style.transition = 'opacity 0.3s, transform 0.3s';
+            elements[i].style.opacity = '1';
+            elements[i].style.transform = 'translateY(0)';
         }
-        
-        function togglePlayPause() {
-            if (!state.currentTrack && state.tracks.length > 0) {
-                playTrack(state.tracks[0].id);
-                return;
-            }
-            
-            if (state.isPlaying) {
-                audio.pause();
-            } else {
-                audio.play().catch(err => {
-                    if (!state.currentTrack && state.tracks.length > 0) {
-                        playTrack(state.tracks[0].id);
-                    }
-                });
-            }
-        }
-        
-        function updatePlayPauseIcons() {
-            elements.playIcon.style.display = state.isPlaying ? 'none' : 'block';
-            elements.pauseIcon.style.display = state.isPlaying ? 'flex' : 'none';
-        }
-        
-        function updateProgress() {
-            if (audio.duration) {
-                const percent = (audio.currentTime / audio.duration) * 100;
-                elements.progressBar.style.width = `${percent}%`;
-            }
-        }
-        
-        // ====================== НАВИГАЦИЯ ======================
-        function initNavigation() {
-            elements.navBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    elements.navBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
-                    const tabId = this.getAttribute('data-tab');
-                    document.querySelectorAll('.tab-content').forEach(tab => {
-                        tab.classList.remove('active');
-                    });
-                    document.getElementById(tabId).classList.add('active');
-                    
-                    document.getElementById('app-header').textContent = 
-                        tabId === 'home-tab' ? 'MusCat' : 'Медиатека';
-                });
-            });
-        }
-        
-        // Запускаем приложение
-        init();
-        
-        // Глобальные функции для использования в HTML
-        window.playTrack = playTrack;
-        window.toggleFavorite = toggleFavorite;
-        window.showEditModal = showEditModal;
-        window.saveTrackChanges = saveTrackChanges;
-    </script>
+    }
+    
+    // Запускаем анимацию после загрузки контента
+    setTimeout(animateElements, 500);
+</script>
 </body>
 </html>
