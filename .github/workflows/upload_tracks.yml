@@ -17,71 +17,51 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Debug info
+      - name: Debug full event data
         run: |
-          echo "🔍 Debug информация:"
-          echo "Название Issue: ${{ github.event.issue.title }}"
-          echo "Описание: ${{ github.event.issue.body }}"
-          echo "Есть вложения: ${{ toJSON(github.event.issue.attachments) }}"
+          echo "🎯 Полные данные события:"
+          echo "${{ toJSON(github.event) }}"
 
       - name: Check for upload command
         id: check_upload
         run: |
           if echo "${{ github.event.issue.body }}" | grep -q "!upload"; then
-            echo "✅ Команда !upload найдена"
+            echo "✅ Команда !upload найдена в Issue"
             echo "has_upload=true" >> $GITHUB_OUTPUT
           else
             echo "❌ Команда !upload не найдена"
             echo "has_upload=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Validate attachment
+      - name: Get issue details via API
         if: steps.check_upload.outputs.has_upload == 'true'
-        id: validate_attachment
-        run: |
-          # Проверяем есть ли прикрепленные файлы
-          if [ -z "${{ github.event.issue.attachments }}" ] || [ "${{ github.event.issue.attachments }}" = "[]" ]; then
-            echo "❌ Нет прикрепленных файлов!"
-            echo "has_attachment=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          FILENAME="${{ github.event.issue.attachments[0].name }}"
-          URL="${{ github.event.issue.attachments[0].url }}"
-          
-          # Проверяем формат файла
-          if echo "$FILENAME" | grep -E '\.(mp3|wav|ogg|m4a)$'; then
-            echo "✅ Аудиофайл найден: $FILENAME"
-            echo "has_attachment=true" >> $GITHUB_OUTPUT
-            echo "filename=$FILENAME" >> $GITHUB_OUTPUT
-            echo "url=$URL" >> $GITHUB_OUTPUT
-          else
-            echo "❌ Неподдерживаемый формат: $FILENAME"
-            echo "has_attachment=false" >> $GITHUB_OUTPUT
-          fi
+        id: get_issue
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: issue } = await github.rest.issues.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number
+            });
+            
+            console.log('📋 Данные Issue через API:');
+            console.log('Body:', issue.body);
+            console.log('Attachments:', issue.attachments);
+            
+            return issue.attachments || [];
 
-      - name: Download audio file
-        if: steps.validate_attachment.outputs.has_attachment == 'true'
+      - name: Create test file manually
+        if: steps.check_upload.outputs.has_upload == 'true'
         run: |
-          echo "📥 Скачиваю файл: ${{ steps.validate_attachment.outputs.filename }}"
+          echo "🔄 Создаю тестовый файл вручную..."
           mkdir -p tracks
+          echo "Тестовый файл создан из Issue #${{ github.event.issue.number }}" > "tracks/test_from_issue_${{ github.event.issue.number }}.txt"
           
-          # Скачиваем файл
-          wget -O "tracks/${{ steps.validate_attachment.outputs.filename }}" "${{ steps.validate_attachment.outputs.url }}"
-          
-          echo "✅ Файл скачан успешно!"
-          ls -la tracks/
-
-      - name: Commit and push
-        if: steps.validate_attachment.outputs.has_attachment == 'true'
-        run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           git add tracks/
-          git commit -m "🎵 Добавлен трек: ${{ steps.validate_attachment.outputs.filename }}"
+          git commit -m "✅ Тест: файл из Issue #${{ github.event.issue.number }}"
           git push
-          echo "🎉 Трек добавлен в репозиторий!"
-
-      - name: Skip non-upload
-        if: steps.check_upload.outputs.has_upload == 'false'
-        run: echo "ℹ️  Пропускаем - нет команды !upload"
+          
+          echo "🎉 Тестовый файл создан успешно!"
