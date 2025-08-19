@@ -30,6 +30,19 @@
             font-size: 24px;
             font-weight: bold;
             text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .admin-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 5px 10px;
+            font-size: 12px;
+            cursor: pointer;
         }
         
         .main-content {
@@ -242,7 +255,7 @@
             margin-top: 0;
         }
         
-        .modal input {
+        .modal input, .modal textarea {
             width: 100%;
             padding: 10px;
             margin: 10px 0;
@@ -250,6 +263,11 @@
             border: none;
             color: white;
             border-radius: 5px;
+        }
+        
+        .modal textarea {
+            min-height: 100px;
+            resize: vertical;
         }
         
         .modal-buttons {
@@ -303,10 +321,36 @@
             background: var(--primary);
             width: 0%;
         }
+        
+        .upload-btn {
+            position: fixed;
+            bottom: 120px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .file-input {
+            display: none;
+        }
     </style>
 </head>
 <body>
-    <div class="header" id="app-header">MusCat</div>
+    <div class="header" id="app-header">
+        <span>MusCat</span>
+        <button class="admin-btn" id="upload-btn" style="display: none;">Загрузить</button>
+    </div>
     
     <div id="home-tab" class="tab-content active">
         <div class="main-content">
@@ -347,6 +391,9 @@
         </div>
     </div>
     
+    <button class="upload-btn" id="floating-upload-btn" style="display: none;">+</button>
+    <input type="file" id="file-input" class="file-input" accept="audio/*">
+    
     <div class="nav-bar">
         <button class="nav-btn active" data-tab="home-tab">
             <span class="nav-icon">🏠</span>
@@ -363,7 +410,10 @@
         const config = {
             username: 'JustSink',
             repo: 'muscat_official',
-            tracksPath: 'tracks'
+            tracksPath: 'tracks',
+            // Токен для доступа к GitHub API (только для админа)
+            // Внимание! Не храните токены в клиентском коде в реальных приложениях!
+            githubToken: 'ghp_your_token_here' // Замените на ваш токен
         };
         
         // Ваш Telegram ID (можно узнать через @userinfobot)
@@ -393,7 +443,10 @@
             favoritesCount: document.getElementById('favorites-count'),
             navBtns: document.querySelectorAll('.nav-btn'),
             progressBar: document.getElementById('progress-bar'),
-            progressContainer: document.getElementById('progress-container')
+            progressContainer: document.getElementById('progress-container'),
+            uploadBtn: document.getElementById('upload-btn'),
+            floatingUploadBtn: document.getElementById('floating-upload-btn'),
+            fileInput: document.getElementById('file-input')
         };
         
         let updateProgressInterval;
@@ -414,6 +467,9 @@
             
             // Инициализация навигации
             initNavigation();
+            
+            // Инициализация загрузки файлов
+            initUpload();
         }
         
         function checkAdminAccess() {
@@ -421,6 +477,8 @@
             if (typeof Telegram !== 'undefined' && Telegram.WebApp?.initDataUnsafe?.user?.id === ADMIN_ID) {
                 state.adminMode = true;
                 document.body.classList.add('admin');
+                elements.uploadBtn.style.display = 'block';
+                elements.floatingUploadBtn.style.display = 'flex';
                 return;
             }
             
@@ -428,6 +486,8 @@
             if (window.location.href.includes("?admin")) {
                 state.adminMode = true;
                 document.body.classList.add('admin');
+                elements.uploadBtn.style.display = 'block';
+                elements.floatingUploadBtn.style.display = 'flex';
                 console.log("Админский режим активирован через URL");
             }
         }
@@ -630,6 +690,7 @@
                         <h3>Редактирование трека</h3>
                         <input type="text" id="edit-name" value="${escapeHtml(track.name)}" placeholder="Название">
                         <input type="text" id="edit-artist" value="${escapeHtml(track.artist)}" placeholder="Исполнитель">
+                        <textarea id="edit-lyrics" placeholder="Текст песни (опционально)">${escapeHtml(track.lyrics || '')}</textarea>
                         <div class="modal-buttons">
                             <button class="modal-btn" onclick="this.closest('.modal').remove()">Отмена</button>
                             <button class="modal-btn save" onclick="saveTrackChanges('${trackId}')">Сохранить</button>
@@ -656,6 +717,7 @@
             
             track.name = document.getElementById('edit-name').value || track.name;
             track.artist = document.getElementById('edit-artist').value || track.artist;
+            track.lyrics = document.getElementById('edit-lyrics').value || "";
             
             // Сохраняем метаданные
             const metadata = JSON.parse(localStorage.getItem('tracksMetadata')) || {};
@@ -663,6 +725,7 @@
                 id: track.id,
                 name: track.name,
                 artist: track.artist,
+                lyrics: track.lyrics,
                 file: track.file
             };
             localStorage.setItem('tracksMetadata', JSON.stringify(metadata));
@@ -674,6 +737,135 @@
             if (state.currentTrack?.id === trackId) {
                 updatePlayerInfo();
             }
+        }
+        
+        // ====================== ЗАГРУЗКА ТРЕКОВ ======================
+        function initUpload() {
+            if (!state.adminMode) return;
+            
+            elements.uploadBtn.addEventListener('click', () => {
+                elements.fileInput.click();
+            });
+            
+            elements.floatingUploadBtn.addEventListener('click', () => {
+                elements.fileInput.click();
+            });
+            
+            elements.fileInput.addEventListener('change', async (e) => {
+                const files = e.target.files;
+                if (files.length === 0) return;
+                
+                showUploadModal(files);
+            });
+        }
+        
+        function showUploadModal(files) {
+            const modalHtml = `
+                <div class="modal">
+                    <div class="modal-content">
+                        <h3>Загрузка ${files.length} трека(ов)</h3>
+                        <div id="upload-status">
+                            ${Array.from(files).map(file => `
+                                <div class="upload-file" data-filename="${escapeHtml(file.name)}">
+                                    <div>${escapeHtml(file.name)}</div>
+                                    <div class="upload-progress">Ожидание...</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <div class="modal-buttons">
+                            <button class="modal-btn" onclick="this.closest('.modal').remove()">Закрыть</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Начинаем загрузку
+            uploadFiles(files);
+        }
+        
+        async function uploadFiles(files) {
+            if (!state.adminMode) return;
+            
+            for (const file of files) {
+                try {
+                    updateUploadStatus(file.name, 'Загрузка на GitHub...');
+                    
+                    // Читаем файл как base64
+                    const base64Content = await readFileAsBase64(file);
+                    
+                    // Создаем запрос на загрузку
+                    const response = await uploadToGitHub(file.name, base64Content);
+                    
+                    if (response.content) {
+                        updateUploadStatus(file.name, 'Успешно загружено!');
+                        
+                        // Добавляем трек в список
+                        const newTrack = {
+                            id: `track_${Date.now()}`,
+                            file: file.name,
+                            name: parseFileName(file.name).name,
+                            artist: parseFileName(file.name).artist,
+                            lyrics: ""
+                        };
+                        
+                        state.tracks.push(newTrack);
+                        
+                        // Сохраняем метаданные
+                        const metadata = JSON.parse(localStorage.getItem('tracksMetadata')) || {};
+                        metadata[file.name] = newTrack;
+                        localStorage.setItem('tracksMetadata', JSON.stringify(metadata));
+                        
+                        renderTrackLists();
+                    } else {
+                        updateUploadStatus(file.name, 'Ошибка загрузки');
+                    }
+                } catch (error) {
+                    console.error('Ошибка загрузки файла:', error);
+                    updateUploadStatus(file.name, 'Ошибка: ' + error.message);
+                }
+            }
+        }
+        
+        function updateUploadStatus(filename, status) {
+            const uploadElements = document.querySelectorAll('.upload-file');
+            uploadElements.forEach(el => {
+                if (el.getAttribute('data-filename') === filename) {
+                    el.querySelector('.upload-progress').textContent = status;
+                }
+            });
+        }
+        
+        function readFileAsBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64String = reader.result.split(',')[1];
+                    resolve(base64String);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        async function uploadToGitHub(filename, content) {
+            const apiUrl = `https://api.github.com/repos/${config.username}/${config.repo}/contents/${config.tracksPath}/${filename}`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${config.githubToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: `Add ${filename}`,
+                    content: content,
+                    branch: 'main'
+                })
+            });
+            
+            return await response.json();
         }
         
         // ====================== ПЛЕЕР ======================
