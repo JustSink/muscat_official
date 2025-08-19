@@ -9,77 +9,23 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      issues: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Find attached audio file
-        id: find_file
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const comment = context.payload.comment;
-            
-            // Проверяем команду upload
-            if (!comment.body.includes('!upload')) {
-              console.log('Команда !upload не найдена');
-              return '';
-            }
-
-            // Проверяем вложения
-            const attachment = comment.attachments?.[0];
-            if (!attachment) {
-              console.log('Нет прикреплённых файлов');
-              return '';
-            }
-
-            // Проверяем формат файла
-            if (!attachment.name.match(/\.(mp3|ogg|wav|m4a)$/i)) {
-              console.log('Файл не аудио: ' + attachment.name);
-              return '';
-            }
-
-            console.log('Найден аудиофайл: ' + attachment.name);
-            return attachment.url;
-
-      - name: Download and save track
-        if: steps.find_file.outputs.result != ''
+      - name: Debug info
         run: |
-          # Создаём папку tracks если её нет
+          echo "🔄 Workflow запущен!"
+          echo "Комментарий: ${{ github.event.comment.body }}"
+          echo "Пользователь: ${{ github.event.comment.user.login }}"
+          echo "Есть вложения: ${{ toJSON(github.event.comment.attachments) }}"
+
+      - name: Create test file
+        run: |
           mkdir -p tracks
+          echo "Тестовый файл создан в $(date)" > tracks/test_workflow.txt
+          echo "✅ Создан тестовый файл в папке tracks/"
 
-          # Генерируем уникальное имя файла
-          FILENAME="track_$(date +%s).mp3"
-          
-          # Скачиваем файл
-          echo "Скачиваю файл: ${{ steps.find_file.outputs.result }}"
-          wget -O "tracks/$FILENAME" "${{ steps.find_file.outputs.result }}"
-          
-          # Проверяем что файл скачался
-          if [ ! -f "tracks/$FILENAME" ]; then
-            echo "Ошибка: файл не скачался!"
-            exit 1
-          fi
-          
-          echo "Файл успешно скачан: tracks/$FILENAME"
-          
-          # Настраиваем git
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "actions@github.com"
-          
-          # Коммитим изменения
-          git add tracks/
-          git commit -m "[Auto] Добавлен новый трек из Issue"
-          
-          # Пуш
-          echo "Загружаю изменения в GitHub..."
-          git push
-          echo "✅ Файл успешно добавлен в репозиторий!"
-
-      - name: Success notification
-        if: success()
-        run: echo "🎵 Workflow выполнен успешно! Трек добавлен в библиотеку."
+      - name: Success
+        run: echo "🎉 Workflow выполнен успешно! Проверьте папку tracks/"
