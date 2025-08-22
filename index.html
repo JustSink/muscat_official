@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Music Library Mini App</title>
+    <title>Muscat Music Player</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -17,7 +17,7 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             padding: 20px;
-            color: #333;
+            color: white;
         }
 
         .container {
@@ -28,7 +28,6 @@
         .header {
             text-align: center;
             margin-bottom: 30px;
-            color: white;
         }
 
         .header h1 {
@@ -37,407 +36,435 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.3);
         }
 
-        .header p {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-
-        .upload-section {
-            background: white;
+        .player {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            padding: 30px;
+            padding: 20px;
             margin-bottom: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
             text-align: center;
         }
 
-        .upload-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            margin: 10px 0;
-        }
-
-        .upload-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-        }
-
-        .upload-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .file-info {
-            margin: 20px 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-        }
-
-        .file-info h3 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .metadata-form {
-            display: none;
-            margin-top: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .form-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .submit-btn {
-            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            width: 100%;
-            transition: transform 0.2s;
-        }
-
-        .submit-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        .status-section {
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-        }
-
-        .status-message {
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
-
-        .status-loading {
-            background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            color: #856404;
-        }
-
-        .status-success {
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-        }
-
-        .status-error {
-            background: #f8d7da;
-            border: 1px solid #f5c6cb;
-            color: #721c24;
-        }
-
-        .track-list {
-            margin-top: 20px;
-        }
-
-        .track-item {
-            background: white;
-            border-radius: 15px;
-            padding: 15px;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
         .track-info {
-            flex: 1;
+            margin-bottom: 20px;
         }
 
         .track-title {
-            font-weight: 600;
-            color: #333;
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
         }
 
         .track-artist {
-            color: #666;
             font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .control-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
         }
 
         .play-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 12px;
+            background: rgba(255, 255, 255, 0.3);
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
         }
 
-        .hidden {
-            display: none;
+        .progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: white;
+            width: 0%;
+            transition: width 0.1s;
+        }
+
+        .time {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+
+        .track-list {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 15px;
+        }
+
+        .track-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .track-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .track-item.active {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .track-item-info {
+            flex: 1;
+        }
+
+        .track-item-title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .track-item-artist {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .track-item-duration {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .volume-slider {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+            outline: none;
+        }
+
+        .volume-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
         }
 
         .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+            text-align: center;
+            padding: 20px;
         }
 
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
+        .error {
+            background: rgba(255, 0, 0, 0.2);
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .refresh-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 20px;
+            padding: 10px 20px;
+            color: white;
+            margin-top: 10px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎵 Music Library</h1>
-            <p>Добавляйте и слушайте вашу музыку</p>
+            <h1>🎵 Muscat Player</h1>
+            <p>Слушайте вашу музыку</p>
         </div>
 
-        <div class="upload-section">
-            <h2>Добавить трек</h2>
-            <button class="upload-btn" onclick="selectAudio()">📁 Выбрать аудиофайл</button>
-            
-            <div id="fileInfo" class="file-info hidden">
-                <h3>Информация о файле</h3>
-                <p id="fileName"></p>
-                <p id="fileSize"></p>
-                <p id="fileDuration"></p>
+        <div class="player">
+            <div class="track-info">
+                <div class="track-title" id="currentTitle">Выберите трек</div>
+                <div class="track-artist" id="currentArtist">—</div>
             </div>
 
-            <div id="metadataForm" class="metadata-form">
-                <div class="form-group">
-                    <label for="artist">Исполнитель:</label>
-                    <input type="text" id="artist" placeholder="Введите имя исполнителя" required>
-                </div>
-                <div class="form-group">
-                    <label for="title">Название трека:</label>
-                    <input type="text" id="title" placeholder="Введите название трека" required>
-                </div>
-                <button class="submit-btn" onclick="uploadTrack()">📤 Загрузить трек</button>
+            <div class="controls">
+                <button class="control-btn" onclick="prevTrack()">⏮</button>
+                <button class="control-btn play-btn" onclick="togglePlay()" id="playBtn">▶</button>
+                <button class="control-btn" onclick="nextTrack()">⏭</button>
+            </div>
+
+            <div class="progress" onclick="seekTrack(event)">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+
+            <div class="time">
+                <span id="currentTime">0:00</span>
+                <span id="totalTime">0:00</span>
+            </div>
+
+            <div class="volume-control">
+                <span>🔈</span>
+                <input type="range" class="volume-slider" min="0" max="1" step="0.1" value="0.7" oninput="changeVolume(this.value)">
+                <span>🔊</span>
             </div>
         </div>
 
-        <div class="status-section">
-            <div id="statusMessage" class="status-message hidden"></div>
-            
-            <div class="track-list">
-                <h3>Последние добавленные треки</h3>
-                <div id="tracksList"></div>
+        <div class="track-list">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3>Доступные треки</h3>
+                <button class="refresh-btn" onclick="loadTracks()">🔄 Обновить</button>
+            </div>
+            <div id="tracksContainer">
+                <div class="loading">Загрузка треков...</div>
             </div>
         </div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
-        let selectedFile = null;
+        let audioPlayer = new Audio();
+        let currentTrackIndex = 0;
+        let tracks = [];
+        let isPlaying = false;
+
+        // Конфигурация (замените на свои значения)
+        const BOT_TOKEN = '8205946109:AAF1_ewot3Vbi5toKlC-xTjYXZhdUDwyV-I';
+        const DB_CHANNEL_ID = '-1002972152929';
 
         // Инициализация
         tg.expand();
-        tg.enableClosingConfirmation();
         tg.BackButton.hide();
 
-        // Элементы DOM
-        const fileInput = document.createElement('input');
-        fileInput.type = 'file';
-        fileInput.accept = 'audio/*';
-        fileInput.style.display = 'none';
-        fileInput.onchange = handleFileSelect;
-        document.body.appendChild(fileInput);
+        // Инициализация аудиоплеера
+        audioPlayer.volume = 0.7;
+        
+        audioPlayer.addEventListener('timeupdate', updateProgress);
+        audioPlayer.addEventListener('ended', nextTrack);
+        audioPlayer.addEventListener('loadedmetadata', function() {
+            document.getElementById('totalTime').textContent = formatTime(audioPlayer.duration);
+        });
 
-        // Функции
-        function selectAudio() {
-            fileInput.click();
-        }
-
-        function handleFileSelect(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            selectedFile = file;
-            
-            // Показываем информацию о файле
-            document.getElementById('fileName').textContent = `Имя: ${file.name}`;
-            document.getElementById('fileSize').textContent = `Размер: ${formatFileSize(file.size)}`;
-            document.getElementById('fileInfo').classList.remove('hidden');
-            
-            // Пытаемся извлечь метаданные из имени файла
-            extractMetadataFromFilename(file.name);
-            
-            // Показываем форму для метаданных
-            document.getElementById('metadataForm').style.display = 'block';
-        }
-
-        function extractMetadataFromFilename(filename) {
-            // Пытаемся найти паттерн "Исполнитель - Название.mp3"
-            const match = filename.match(/^(.*?) - (.*?)\.(mp3|m4a|wav|flac|ogg)$/i);
-            
-            if (match) {
-                document.getElementById('artist').value = match[1].trim();
-                document.getElementById('title').value = match[2].trim();
-            } else {
-                // Если паттерн не найден, используем имя файла без расширения как название
-                const nameWithoutExt = filename.replace(/\.[^/.]+$/, "");
-                document.getElementById('title').value = nameWithoutExt;
-            }
-        }
-
-        function formatFileSize(bytes) {
-            if (bytes === 0) return '0 Bytes';
-            const k = 1024;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-        }
-
-        async function uploadTrack() {
-            if (!selectedFile) {
-                showStatus('Пожалуйста, выберите файл', 'error');
-                return;
-            }
-
-            const artist = document.getElementById('artist').value.trim();
-            const title = document.getElementById('title').value.trim();
-
-            if (!artist || !title) {
-                showStatus('Пожалуйста, заполните все поля', 'error');
-                return;
-            }
-
-            showStatus('Загрузка трека...', 'loading');
-
+        // Функция для парсинга сообщений из канала
+        function parseTrackFromMessage(messageText) {
             try {
-                // Здесь будет отправка файла через бота
-                // В реальном приложении нужно использовать Telegram Bot API
+                const parts = messageText.split(' | ');
+                const track = {};
                 
-                // Имитация загрузки
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                parts.forEach(part => {
+                    if (part.includes('file_id:')) {
+                        track.file_id = part.replace('file_id:', '').trim();
+                    } else if (part.includes('title:')) {
+                        track.title = part.replace('title:', '').trim();
+                    } else if (part.includes('artist:')) {
+                        track.artist = part.replace('artist:', '').trim();
+                    } else if (part.includes('added:')) {
+                        track.added = part.replace('added:', '').trim();
+                    }
+                });
                 
-                showStatus('✅ Трек успешно добавлен в библиотеку!', 'success');
+                return track;
+            } catch (error) {
+                console.error('Error parsing track:', error);
+                return null;
+            }
+        }
+
+        // Загрузка треков из канала
+        async function loadTracks() {
+            const container = document.getElementById('tracksContainer');
+            container.innerHTML = '<div class="loading">Загрузка треков...</div>';
+            
+            try {
+                // В реальном приложении нужно использовать backend для доступа к API
+                // Это демо-версия с имитацией загрузки
                 
-                // Очищаем форму
-                resetForm();
+                // Имитация загрузки треков из канала
+                await new Promise(resolve => setTimeout(resolve, 1000));
                 
-                // Обновляем список треков
-                loadRecentTracks();
+                // В реальности здесь будет запрос к вашему backend API:
+                // const response = await fetch(`/api/tracks?channel_id=${DB_CHANNEL_ID}`);
+                // const messages = await response.json();
+                
+                // Для демо используем имитацию данных
+                const mockMessages = [
+                    "file_id: CQACAgIAAxkBAAIBIWgAAQUVAAE5AAE5p9UvV7pXxQABk_8AAmU4AAJ3Y-lJAAEelXrQAAHpLzAE | title: Swim | artist: Chase Atlantic | added: 2024-01-15 14:30",
+                    "file_id: CQACAgIAAxkBAAIBI2gAAQUVAAE5AAE5p9UvV7pXxQABk_8AAmU4AAJ3Y-lJAAEelXrQAAHpLzAE | title: Blinding Lights | artist: The Weeknd | added: 2024-01-15 15:45",
+                    "file_id: CQACAgIAAxkBAAIBJWgAAQUVAAE5AAE5p9UvV7pXxQABk_8AAmU4AAJ3Y-lJAAEelXrQAAHpLzAE | title: Save Your Tears | artist: The Weeknd | added: 2024-01-16 10:20"
+                ];
+                
+                tracks = mockMessages
+                    .map(parseTrackFromMessage)
+                    .filter(track => track !== null)
+                    .reverse(); // Новые треки first
+                
+                displayTracks();
                 
             } catch (error) {
-                showStatus('❌ Ошибка при загрузке трека: ' + error.message, 'error');
+                console.error('Error loading tracks:', error);
+                container.innerHTML = '<div class="error">Ошибка загрузки треков</div>';
             }
         }
 
-        function showStatus(message, type) {
-            const statusElement = document.getElementById('statusMessage');
-            statusElement.textContent = message;
-            statusElement.className = `status-message status-${type}`;
-            statusElement.classList.remove('hidden');
+        function displayTracks() {
+            const container = document.getElementById('tracksContainer');
             
-            if (type === 'success') {
-                setTimeout(() => {
-                    statusElement.classList.add('hidden');
-                }, 3000);
+            if (tracks.length === 0) {
+                container.innerHTML = '<div class="error">Нет доступных треков</div>';
+                return;
             }
-        }
 
-        function resetForm() {
-            selectedFile = null;
-            document.getElementById('fileInfo').classList.add('hidden');
-            document.getElementById('metadataForm').style.display = 'none';
-            document.getElementById('artist').value = '';
-            document.getElementById('title').value = '';
-            fileInput.value = '';
-        }
-
-        async function loadRecentTracks() {
-            // Здесь будет загрузка списка треков из вашей БД
-            // Временные данные для демонстрации
-            const tracks = [
-                { title: 'Swim', artist: 'Chase Atlantic' },
-                { title: 'Blinding Lights', artist: 'The Weeknd' },
-                { title: 'Save Your Tears', artist: 'The Weeknd' }
-            ];
-
-            const tracksList = document.getElementById('tracksList');
-            tracksList.innerHTML = '';
-
-            tracks.forEach(track => {
+            container.innerHTML = '';
+            
+            tracks.forEach((track, index) => {
                 const trackElement = document.createElement('div');
                 trackElement.className = 'track-item';
                 trackElement.innerHTML = `
-                    <div class="track-info">
-                        <div class="track-title">${track.title}</div>
-                        <div class="track-artist">${track.artist}</div>
+                    <div class="track-item-info">
+                        <div class="track-item-title">${track.title}</div>
+                        <div class="track-item-artist">${track.artist}</div>
                     </div>
-                    <button class="play-btn" onclick="playTrack('${track.title}', '${track.artist}')">
-                        ▶️ Play
-                    </button>
+                    <div class="track-item-duration">${track.added?.split(' ')[0] || ''}</div>
                 `;
-                tracksList.appendChild(trackElement);
+                
+                trackElement.addEventListener('click', () => playTrack(index));
+                container.appendChild(trackElement);
             });
         }
 
-        function playTrack(title, artist) {
-            // Здесь будет логика воспроизведения трека
-            showStatus(`🎵 Воспроизведение: ${artist} - ${title}`, 'success');
+        function playTrack(index) {
+            if (index < 0 || index >= tracks.length) return;
+
+            currentTrackIndex = index;
+            const track = tracks[index];
+
+            // Формируем URL для доступа к аудиофайлу через Telegram API
+            // В реальном приложении это должно делаться через backend из-за CORS
+            const audioUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${track.file_id}`;
+            
+            // Для демо используем заглушку, так как прямой доступ к файлам требует настроек CORS
+            audioPlayer.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
+            
+            document.getElementById('currentTitle').textContent = track.title;
+            document.getElementById('currentArtist').textContent = track.artist;
+            
+            // Подсветка активного трека
+            document.querySelectorAll('.track-item').forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+
+            audioPlayer.play();
+            isPlaying = true;
+            document.getElementById('playBtn').textContent = '⏸';
         }
 
-        // Инициализация при загрузке
-        document.addEventListener('DOMContentLoaded', () => {
-            loadRecentTracks();
-        });
-
-        // Обработчики Telegram WebApp
-        tg.onEvent('viewportChanged', (event) => {
-            console.log('Viewport changed:', event);
-        });
-
-        // Основная функция для отправки файла боту (будет реализована позже)
-        async function sendFileToBot(file, artist, title) {
-            // Эта функция будет использовать Telegram Bot API для отправки файла
-            // Пока что это заглушка
-            console.log('Sending to bot:', { file, artist, title });
-            return true;
+        function togglePlay() {
+            if (audioPlayer.src) {
+                if (isPlaying) {
+                    audioPlayer.pause();
+                    document.getElementById('playBtn').textContent = '▶';
+                } else {
+                    audioPlayer.play();
+                    document.getElementById('playBtn').textContent = '⏸';
+                }
+                isPlaying = !isPlaying;
+            } else if (tracks.length > 0) {
+                playTrack(0);
+            }
         }
+
+        function prevTrack() {
+            let newIndex = currentTrackIndex - 1;
+            if (newIndex < 0) newIndex = tracks.length - 1;
+            playTrack(newIndex);
+        }
+
+        function nextTrack() {
+            let newIndex = currentTrackIndex + 1;
+            if (newIndex >= tracks.length) newIndex = 0;
+            playTrack(newIndex);
+        }
+
+        function updateProgress() {
+            const progress = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('currentTime').textContent = formatTime(audioPlayer.currentTime);
+        }
+
+        function seekTrack(event) {
+            if (!audioPlayer.duration) return;
+            
+            const progressBar = document.getElementById('progressBar');
+            const rect = progressBar.parentElement.getBoundingClientRect();
+            const seekPosition = (event.clientX - rect.left) / rect.width;
+            audioPlayer.currentTime = audioPlayer.duration * seekPosition;
+        }
+
+        function changeVolume(volume) {
+            audioPlayer.volume = volume;
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Загрузка при старте
+        document.addEventListener('DOMContentLoaded', function() {
+            loadTracks();
+        });
+
+        // Обработчики для клавиатуры
+        document.addEventListener('keydown', function(event) {
+            switch(event.code) {
+                case 'Space':
+                    event.preventDefault();
+                    togglePlay();
+                    break;
+                case 'ArrowLeft':
+                    audioPlayer.currentTime = Math.max(0, audioPlayer.currentTime - 10);
+                    break;
+                case 'ArrowRight':
+                    audioPlayer.currentTime = Math.min(audioPlayer.duration, audioPlayer.currentTime + 10);
+                    break;
+            }
+        });
     </script>
 </body>
 </html>
