@@ -6,6 +6,7 @@
     <title>Muscat Music Player</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Стили остаются такими же как выше */
         * {
             margin: 0;
             padding: 0;
@@ -262,10 +263,6 @@
         let tracks = [];
         let isPlaying = false;
 
-        // Конфигурация (замените на свои значения)
-        const BOT_TOKEN = '8205946109:AAF1_ewot3Vbi5toKlC-xTjYXZhdUDwyV-I';
-        const DB_CHANNEL_ID = '-1002972152929';
-
         // Инициализация
         tg.expand();
         tg.BackButton.hide();
@@ -279,64 +276,43 @@
             document.getElementById('totalTime').textContent = formatTime(audioPlayer.duration);
         });
 
-        // Функция для парсинга сообщений из канала
-        function parseTrackFromMessage(messageText) {
-            try {
-                const parts = messageText.split(' | ');
-                const track = {};
-                
-                parts.forEach(part => {
-                    if (part.includes('file_id:')) {
-                        track.file_id = part.replace('file_id:', '').trim();
-                    } else if (part.includes('title:')) {
-                        track.title = part.replace('title:', '').trim();
-                    } else if (part.includes('artist:')) {
-                        track.artist = part.replace('artist:', '').trim();
-                    } else if (part.includes('added:')) {
-                        track.added = part.replace('added:', '').trim();
-                    }
-                });
-                
-                return track;
-            } catch (error) {
-                console.error('Error parsing track:', error);
-                return null;
-            }
-        }
-
-        // Загрузка треков из канала
+        // Функция для получения треков через Telegram Mini App API
         async function loadTracks() {
             const container = document.getElementById('tracksContainer');
             container.innerHTML = '<div class="loading">Загрузка треков...</div>';
             
             try {
-                // В реальном приложении нужно использовать backend для доступа к API
-                // Это демо-версия с имитацией загрузки
+                // Используем Telegram WebApp API для связи с ботом
+                // Бот будет отправлять список треков через метод sendData
                 
-                // Имитация загрузки треков из канала
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // В реальности здесь будет запрос к вашему backend API:
-                // const response = await fetch(`/api/tracks?channel_id=${DB_CHANNEL_ID}`);
-                // const messages = await response.json();
-                
-                // Для демо используем имитацию данных
-                const mockMessages = [
-                    "file_id: CQACAgIAAxkBAAIBIWgAAQUVAAE5AAE5p9UvV7pXxQABk_8AAmU4AAJ3Y-lJAAEelXrQAAHpLzAE | title: Swim | artist: Chase Atlantic | added: 2024-01-15 14:30",
-                    "file_id: CQACAgIAAxkBAAIBI2gAAQUVAAE5AAE5p9UvV7pXxQABk_8AAmU4AAJ3Y-lJAAEelXrQAAHpLzAE | title: Blinding Lights | artist: The Weeknd | added: 2024-01-15 15:45",
-                    "file_id: CQACAgIAAxkBAAIBJWgAAQUVAAE5AAE5p9UvV7pXxQABk_8AAmU4AAJ3Y-lJAAEelXrQAAHpLzAE | title: Save Your Tears | artist: The Weeknd | added: 2024-01-16 10:20"
-                ];
-                
-                tracks = mockMessages
-                    .map(parseTrackFromMessage)
-                    .filter(track => track !== null)
-                    .reverse(); // Новые треки first
-                
-                displayTracks();
+                // Запрашиваем треки у бота
+                tg.sendData(JSON.stringify({
+                    type: 'get_tracks'
+                }));
                 
             } catch (error) {
                 console.error('Error loading tracks:', error);
                 container.innerHTML = '<div class="error">Ошибка загрузки треков</div>';
+            }
+        }
+
+        // Обработчик получения данных от бота
+        tg.onEvent('viewportChanged', (event) => {
+            console.log('Viewport changed:', event);
+        });
+
+        // Функция для обработки входящих данных от бота
+        function handleBotData(data) {
+            try {
+                const parsedData = JSON.parse(data);
+                
+                if (parsedData.type === 'tracks_list' && parsedData.tracks) {
+                    tracks = parsedData.tracks;
+                    displayTracks();
+                }
+                
+            } catch (error) {
+                console.error('Error parsing bot data:', error);
             }
         }
 
@@ -355,10 +331,10 @@
                 trackElement.className = 'track-item';
                 trackElement.innerHTML = `
                     <div class="track-item-info">
-                        <div class="track-item-title">${track.title}</div>
-                        <div class="track-item-artist">${track.artist}</div>
+                        <div class="track-item-title">${track.title || 'Без названия'}</div>
+                        <div class="track-item-artist">${track.artist || 'Неизвестный исполнитель'}</div>
                     </div>
-                    <div class="track-item-duration">${track.added?.split(' ')[0] || ''}</div>
+                    <div class="track-item-duration">${track.duration || ''}</div>
                 `;
                 
                 trackElement.addEventListener('click', () => playTrack(index));
@@ -372,25 +348,39 @@
             currentTrackIndex = index;
             const track = tracks[index];
 
-            // Формируем URL для доступа к аудиофайлу через Telegram API
-            // В реальном приложении это должно делаться через backend из-за CORS
-            const audioUrl = `https://api.telegram.org/file/bot${BOT_TOKEN}/${track.file_id}`;
-            
-            // Для демо используем заглушку, так как прямой доступ к файлам требует настроек CORS
-            audioPlayer.src = 'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3';
-            
-            document.getElementById('currentTitle').textContent = track.title;
-            document.getElementById('currentArtist').textContent = track.artist;
+            // Запрашиваем у бота прямой URL для прослушивания
+            tg.sendData(JSON.stringify({
+                type: 'play_track',
+                file_id: track.file_id
+            }));
+
+            document.getElementById('currentTitle').textContent = track.title || 'Без названия';
+            document.getElementById('currentArtist').textContent = track.artist || 'Неизвестный исполнитель';
             
             // Подсветка активного трека
             document.querySelectorAll('.track-item').forEach((item, i) => {
                 item.classList.toggle('active', i === index);
             });
 
-            audioPlayer.play();
-            isPlaying = true;
-            document.getElementById('playBtn').textContent = '⏸';
+            // Бот отправит нам audio URL через sendData
         }
+
+        // Обработчик для получения audio URL от бота
+        tg.onEvent('message', (message) => {
+            try {
+                const data = JSON.parse(message);
+                
+                if (data.type === 'audio_url' && data.url) {
+                    audioPlayer.src = data.url;
+                    audioPlayer.play();
+                    isPlaying = true;
+                    document.getElementById('playBtn').textContent = '⏸';
+                }
+                
+            } catch (error) {
+                console.error('Error parsing message:', error);
+            }
+        });
 
         function togglePlay() {
             if (audioPlayer.src) {
@@ -447,7 +437,10 @@
 
         // Загрузка при старте
         document.addEventListener('DOMContentLoaded', function() {
-            loadTracks();
+            // Запрашиваем треки при загрузке
+            tg.sendData(JSON.stringify({
+                type: 'get_tracks'
+            }));
         });
 
         // Обработчики для клавиатуры
@@ -465,6 +458,27 @@
                     break;
             }
         });
+
+        // Глобальная функция для обработки данных от бота (будет вызываться ботом)
+        window.handleTelegramData = function(data) {
+            try {
+                const parsedData = JSON.parse(data);
+                
+                if (parsedData.type === 'tracks_list') {
+                    tracks = parsedData.tracks || [];
+                    displayTracks();
+                }
+                else if (parsedData.type === 'audio_url') {
+                    audioPlayer.src = parsedData.url;
+                    audioPlayer.play();
+                    isPlaying = true;
+                    document.getElementById('playBtn').textContent = '⏸';
+                }
+                
+            } catch (error) {
+                console.error('Error handling Telegram data:', error);
+            }
+        };
     </script>
 </body>
 </html>
