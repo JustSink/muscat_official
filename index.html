@@ -19,11 +19,53 @@
             margin: 50px 0;
             color: #4ecdc4;
         }
+        /* Новые стили для плеера */
+        .player-container {
+            margin: 30px 0;
+        }
+        .track-list {
+            margin: 20px 0;
+            text-align: left;
+        }
+        .track-item {
+            padding: 12px;
+            margin: 8px 0;
+            background: #333;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .track-item:hover {
+            background: #444;
+        }
+        .track-item.playing {
+            background: #4ecdc4;
+            color: #222;
+        }
+        audio {
+            width: 100%;
+            margin-top: 15px;
+        }
+        button {
+            background: #4ecdc4;
+            color: #222;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            margin: 10px 5px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="greeting">Привет! 🎵</div>
     <p>Музыкальное приложение загружается...</p>
+
+    <!-- Новые элементы для плеера -->
+    <div class="player-container">
+        <button onclick="loadTracks()">Показать треки</button>
+        <div id="track-list" class="track-list"></div>
+        <audio id="audio-player" controls></audio>
+    </div>
 
     <script>
         // Минимальная инициализация Telegram WebApp
@@ -40,6 +82,64 @@
         } catch (error) {
             console.log('Not in Telegram environment:', error);
         }
+
+        // Функция загрузки треков
+        async function loadTracks() {
+            try {
+                // Запрос к вашему backend API для получения списка треков
+                const response = await fetch('/api/tracks');
+                const tracks = await response.json();
+                
+                const trackList = document.getElementById('track-list');
+                trackList.innerHTML = '';
+                
+                tracks.forEach(track => {
+                    const trackElement = document.createElement('div');
+                    trackElement.className = 'track-item';
+                    trackElement.innerHTML = `
+                        <strong>${track.title}</strong> - ${track.artist}
+                    `;
+                    trackElement.onclick = () => playTrack(track.id);
+                    trackList.appendChild(trackElement);
+                });
+                
+            } catch (error) {
+                console.error('Ошибка загрузки треков:', error);
+                alert('Ошибка загрузки треков');
+            }
+        }
+
+        // Функция воспроизведения трека
+        async function playTrack(trackId) {
+            try {
+                const audioPlayer = document.getElementById('audio-player');
+                
+                // Формируем URL для проигрывания трека
+                audioPlayer.src = `/api/play/${trackId}`;
+                
+                // Сбрасываем предыдущее состояние
+                audioPlayer.load();
+                
+                // Пытаемся воспроизвести
+                await audioPlayer.play();
+                
+                // Обновляем стили playing
+                document.querySelectorAll('.track-item').forEach(item => {
+                    item.classList.remove('playing');
+                });
+                event.target.classList.add('playing');
+                
+            } catch (error) {
+                console.error('Ошибка воспроизведения:', error);
+                alert('Ошибка воспроизведения трека');
+            }
+        }
+
+        // Автозагрузка треков при открытии
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM loaded, loading tracks...');
+            // loadTracks(); // Раскомментируйте если хотите авто-загрузку
+        });
     </script>
 </body>
 </html>
