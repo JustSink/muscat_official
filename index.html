@@ -115,8 +115,7 @@
                 const audioPlayer = document.getElementById('audio-player');
                 
                 // Формируем URL для проигрывания трека
-                audioPlayer.src = `/api/play/${trackId}`;
-                
+                audioPlayer.src = `/api/play/${track.id}`;
                 // Сбрасываем предыдущее состояние
                 audioPlayer.load();
                 
